@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Watched Movies - New Movie</title>
+	
+	<meta charset="utf-8">
+	<meta name="HandheldFriendly" content="True"> 
+	<meta name="MobileOptimized" content="320"/> 
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no, maximum-scale = 1"> 
+	<meta name="apple-mobile-web-app-capable" content="yes"> 
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+	<meta http-equiv="cleartype" content="on"> 
+	
+	<link rel="stylesheet" href="css/app.css" />
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc3/jquery.mobile.structure-1.0rc3.min.css" /> 
+	<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script> 
+	<script src="http://code.jquery.com/mobile/1.0rc3/jquery.mobile-1.0rc3.min.js"></script> 
+	
+	<script src="js/html5sql.js"></script>
+	<script src="js/app.js"></script>
+	
+</head> 
+<body>
+
+<div data-role="page" class="type-interior" data-theme="a" id="new_movie">
+	<script type="text/javascript">
+		app.views.newMovie();
+	</script>
+		
+	<div data-role="header" data-theme="a">
+		<h1>New Movie</h1>
+		<a href="index.html" data-icon="home" data-iconpos="notext" data-direction="reverse" class="ui-btn-right jqm-home">Home</a>
+	</div>
+
+	<div data-role="content">
+		
+		<form action="#" method="get">
+			<label for="dateWatched">Date Watched</label>
+			<input type="date" name="DateWatched" placeholder="Date Watched" id="dateWatched" />
+	        <input type="text" name="Title" placeholder="Title" />
+			<input type="text" name="ReleaseYear" placeholder="Release Year" />
+			<input type="text" name="Genre" placeholder="Genre" />
+			<textarea name="Tags" placeholder="Tags"></textarea>
+			<input type="number" name="Rating" placeholder="Rating" />
+			<input type="number" name="Inaccessibility" placeholder="Inaccessibility" />
+			<input type="text" name="Director" placeholder="Director" />
+			<input type="text" name="RepeatViewing" placeholder="Repeat Viewing" />
+
+			<br><br>
+			
+			<fieldset class="ui-grid-a">
+				<div class="ui-block-a form-control"><a class="cancel" data-role="button" data-theme="d">Cancel</a></div>
+				<div class="ui-block-b form-control"><button type="submit" data-theme="a">Save</button></div>
+				<div class="ui-block-b form-control mode-readonly"><a class="enable-editing" data-role="button" data-theme="a">Edit</a></div>
+			</fieldset>
+
+		
+		</form>
+	
+	</div>
+
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+=Sheet1!$A$1& "'" & TEXT(B1,"yyyy-mm-dd") & "','" & SUBSTITUTE(Sheet2!C1, "'", "’") & "','" & Sheet2!F1 & "','" & Sheet2!D1 & "','" & Sheet2!E1 & "','" & Sheet2!G1 & "','" & Sheet2!H1 & "','" & SUBSTITUTE(Sheet2!J1, "'", "’")  & "','" & IF(I1<>"",1,0)  & "')"

@@ -1,0 +1,13 @@
+CREATE TABLE Movies (
+	Id 				INTEGER NOT NULL,
+	Title 			VARCHAR(35) NOT NULL,
+	ReleaseYear 	SMALLINT,
+	Genre			VARCHAR(100),
+	Director		VARCHAR(255),
+	DateWatched 	DATETIME,
+	Tags 			VARCHAR(255),
+	Rating 			INT,
+	Inaccessibility INT,
+	RepeatViewing 	BOOLEAN,
+	PRIMARY KEY (Id)
+);
