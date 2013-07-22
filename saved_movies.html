@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Watched Movies- Saved Movies</title>
+	<title>Watched Movies - Saved Movies</title>
 	
 	<meta charset="utf-8">
 	<meta name="HandheldFriendly" content="True"> 
@@ -22,19 +22,25 @@
 </head> 
 <body>
 
-<div data-role="page" class="type-interior" data-theme="a" id="saved_movies">
+<div data-role="page" class="type-interior" data-theme="a" data-dom-cached="true" id="saved_movies">
 	<script type="text/javascript">
 		app.views.savedMovies();
 	</script>
-	<div data-role="header" data-theme="a">
-		<h1>Saved Movies</h1>
-		<a href="index.html" data-icon="home" data-iconpos="notext" data-direction="reverse" class="ui-btn-right jqm-home">Home</a>
+	<div data-role="header" data-theme="a" data-fullscreen="true" data-position="fixed">
+		<a href="index.html" data-icon="home" data-iconpos="notext" data-direction="reverse" data-transition="slide" class="ui-btn-left jqm-home">
+			Home
+		</a>
+		<h1>My Movies</h1>
+		<a href="settings.html" data-icon="gear " data-iconpos="notext" class="ui-btn-right jqm-home" data-rel="dialog" data-transition="pop">
+			Settings
+		</a>
 	</div>
 
 	<div data-role="content">
-
+		<br/>
+		<br/>
 		<ul data-role="listview" data-inset="true" data-theme="a" data-divider-theme="a" id="movie_list">
-			<li data-role="list-divider">Saved Movies</li>
+			<!-- <li data-role="list-divider">Saved Movies</li> -->
 		</ul>
 		
 	</div>

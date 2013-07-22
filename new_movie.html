@@ -29,20 +29,20 @@
 		
 	<div data-role="header" data-theme="a">
 		<h1>New Movie</h1>
-		<a href="index.html" data-icon="home" data-iconpos="notext" data-direction="reverse" class="ui-btn-right jqm-home">Home</a>
+		<!-- <a href="index.html" data-icon="home" data-iconpos="notext" data-direction="reverse" class="ui-btn-right jqm-home">Home</a> -->
 	</div>
 
 	<div data-role="content">
 		
 		<form action="#" method="get">
 			<label for="dateWatched">Date Watched</label>
-			<input type="date" name="DateWatched" placeholder="Date Watched" id="dateWatched" />
-	        <input type="text" name="Title" placeholder="Title" />
+			<input type="date" name="DateWatched" placeholder="Date Watched" id="dateWatched" required />
+	        <input type="text" name="Title" placeholder="Title" required />
 			<input type="text" name="ReleaseYear" placeholder="Release Year" />
 			<input type="text" name="Genre" placeholder="Genre" />
 			<textarea name="Tags" placeholder="Tags"></textarea>
-			<input type="number" name="Rating" placeholder="Rating" />
-			<input type="number" name="Inaccessibility" placeholder="Inaccessibility" />
+			<input type="number" step="1" name="Rating" placeholder="Rating" />
+			<input type="number" step="1" name="Inaccessibility" placeholder="Inaccessibility" />
 			<input type="text" name="Director" placeholder="Director" />
 			<input type="text" name="RepeatViewing" placeholder="Repeat Viewing" />
 

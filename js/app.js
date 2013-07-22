@@ -1,9 +1,8 @@
-$(function() {
-	sessionStorage.setItem('success', 'no');
-});
-
 window.app = {};
 
+
+// Utils
+//
 window.app.utils = {
 	toggleEditMode: function (editable, $form) {
 		var $form = $form || $("form").eq(0);
@@ -74,9 +73,84 @@ window.app.utils = {
 	
 	runDbSetup: function (onSuccess, onError) {
 		app.utils.runSqlFromFile('setup.sql.txt', false, onSuccess, onError);
+	},
+	
+	getDataUri: function (data) {
+		if (typeof data == "object")
+			data = JSON.stringify(data);
+			
+		var url = "data:application/octet-stream;base64," + Base64.encode(data);
+		
+		return url;
+	},
+	
+	downloadUrl: function(url) {
+		var iframe;
+		iframe = document.getElementById("hiddenDownloader");
+		if (iframe === null)
+		{
+			iframe = document.createElement('iframe');  
+			iframe.id = "hiddenDownloader";
+			iframe.style.display = "none";
+			document.body.appendChild(iframe);
+		}
+		iframe.src = url;   
+	},
+	
+	saveJSON: function (obj) {
+		var json = JSON.stringify(obj);
+		window.open( "data:text/json;charset=utf-8," + escape(json))
 	}
 };
 
+var NewBlob = function(data, datatype) {
+    var out;
+
+    try {
+        out = new Blob([data], {type: datatype});
+        console.debug("case 1");
+    }
+    catch (e) {
+        window.BlobBuilder = window.BlobBuilder ||
+                window.WebKitBlobBuilder ||
+                window.MozBlobBuilder ||
+                window.MSBlobBuilder;
+
+        if (e.name == 'TypeError' && window.BlobBuilder) {
+            var bb = new BlobBuilder();
+            bb.append(data);
+            out = bb.getBlob(datatype);
+            console.debug("case 2");
+        }
+        else if (e.name == "InvalidStateError") {
+            // InvalidStateError (tested on FF13 WinXP)
+            out = new Blob([data], {type: datatype});
+            console.debug("case 3");
+        }
+        else {
+            // We're screwed, blob constructor unsupported entirely   
+            console.debug("Errore");
+        }
+    }
+	
+	this.blob = out;
+}
+
+
+// Init
+//
+$(function() {
+	sessionStorage.setItem('success', 'no');
+});
+
+$(document).bind("mobileinit", function(){
+	$.support.touchOverflow = true;
+	$.mobile.touchOverflowEnabled = true;
+});
+
+
+// View controllers
+//
 window.app.views = {
 
 	main: function() {
@@ -92,23 +166,6 @@ window.app.views = {
 				sessionStorage.setItem("selectedRow", "");
 			});
 			
-			$("#importData").on("click", function(e) {
-				e.preventDefault();
-				
-				if (confirm("Are you sure you want to overwrite your data and import?")) {
-					html5sql.process(
-						"DROP TABLE Movies",
-						function(){
-							app.utils.runDbSetup(function () {
-								app.utils.runSqlFromFile('import.sql.txt', true);
-							});
-						},
-						function(error, statement){
-							console.error("Error: " + error.message + " when processing " + statement);
-						}
-					);
-				}
-			});
 		});
 
 
@@ -209,39 +266,127 @@ window.app.views = {
 	savedMovies: function() {
 	
 		$("#saved_movies").on('pageinit', function() {
+			app.views.renderSavedMovies();
+		});
+		
+		$("#saved_movies").on('pagebeforeshow', function() {
+			if ("" + sessionStorage.getItem('refreshSavedMovies') == "true") {
+				app.views.renderSavedMovies();
+				sessionStorage.setItem('refreshSavedMovies', false)
+			}
+		});
+	},
+	
+	renderSavedMovies: function (model) {
+		model = model || {
+			parentalFilter: (localStorage["parentalFilter"] || 10)
+		};		
+	
+		html5sql.putSelectResultsInArray = true;
+		html5sql.process(
+			[
+				"SELECT * FROM Movies WHERE Inaccessibility <= " + model.parentalFilter + " ORDER BY DateWatched DESC;"
+			],
+			function(transaction, results, rowArray) {
+			
+				var html = '';
 
-			html5sql.putSelectResultsInArray = true;
-			html5sql.process(
-				[
-					"SELECT * FROM Movies ORDER BY DateWatched DESC"
-				],
-				function(transaction, results, rowArray) {
+				$.each(rowArray, function(index, value) { 
 				
-					var html = '';
+				  html += "<li><a href='new_movie.html' class='ui-link-inherit movie-link' data-movieid='" + value.Id + "' data-rel='dialog' data-transition='pop'>" + 
+					//value.DateWatched + ": " + 
+					value.Title + " (" + value.ReleaseYear + ")</a></li>";
+				  
+				});
+				
+				html += '</ul>';
+				
+				$('#movie_list').append(html);
+				$('#movie_list').listview('refresh');
+				
+				$('#movie_list .movie-link').on("click", function (e) {
+					sessionStorage.setItem('selectedRow', $(this).data("movieid"))
+				});
+				
+			},
+			function(error, statement){
+				console.error("Error: " + error.message + " when processing " + statement);
+			}        
+		);
+	},
+	
+	settings: function() {
+		$("#tools").on('pageinit', function() {
 
-					$.each(rowArray, function(index, value) { 
-					
-					  html += "<li><a href=\"new_movie.html\" class=\"ui-link-inherit movie-link\" data-movieid='" + value.Id + "'>" + 
-						//value.DateWatched + ": " + 
-						value.Title + " (" + value.ReleaseYear + ")</a></li>";
-					  
-					});
-					
-					html += '</ul>';
-					
-					$('#movie_list').append(html);
-					$('#movie_list').listview('refresh');
-					
-					$('#movie_list .movie-link').on("click", function (e) {
-						sessionStorage.setItem('selectedRow', $(this).data("movieid"))
-					});
-					
-				},
-				function(error, statement){
-					console.error("Error: " + error.message + " when processing " + statement);
-				}        
-			);
+			$("#parentalFilter").on("change", function() {
+				localStorage["parentalFilter"] = $(this).val();
+				sessionStorage.setItem('refreshSavedMovies', true)
+			});
+		
+			$("#importData").on("click", function(e) {
+				e.preventDefault();
+				
+				if (confirm("Are you sure you want to overwrite your data and import?")) {
+					html5sql.process(
+						"DROP TABLE Movies",
+						function(){
+							app.utils.runDbSetup(function () {
+								app.utils.runSqlFromFile('import.sql.txt', true);
+							});
+						},
+						function(error, statement){
+							console.error("Error: " + error.message + " when processing " + statement);
+						}
+					);
+				}
+			});
 
+			$("#downloadData").on("click", function(e) {
+				e.preventDefault();
+				
+				var downloadJson = function() {
+					html5sql.process(["SELECT * FROM Movies;"],
+						function(transaction, results, rowArray){
+						
+							app.utils.saveJSON(rowArray);
+						
+							/*
+							var url = app.utils.getDataUri(rowArray);
+							app.utils.downloadUrl(url);
+							*/
+							
+							/*
+							var rowsToJson = JSON.stringify(rowArray);
+							 
+							window.URL = window.URL || window.webkitURL;						
+							
+							//var blob = new Blob([rowsToJson], {'type':'application\/json'});
+							
+							var blob = new NewBlob(rowsToJson, "application\/json");
+							blob = blob.blob;
+							
+							var a = document.createElement('a');
+							a.href = window.URL.createObjectURL(blob);
+							
+							console.log(a.href);
+							
+							a.download = "movies-" + new Date() + ".json";
+							a.click();
+							*/
+							
+							
+						}, function() {
+						
+						}
+					);
+				};
+				
+				downloadJson();
+			});
+		});
+		
+		$("#tools").on('pagebeforeshow', function() {
+			$("#parentalFilter").val(localStorage["parentalFilter"] || 10);
 		});
 	}
 	
