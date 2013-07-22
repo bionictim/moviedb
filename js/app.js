@@ -16,21 +16,34 @@ window.app.utils = {
 		//
 		var $form = $form || $("form").eq(0);
 		var $inputs = $form.find("input[type='text'], textarea, input[type='date'], input[type='number']");		
-		var names = [];
-		var values = [];
+		var row = {};
 		
 		$inputs.each(function(i, obj){
 			var $input = $(obj);
-			names.push($input[0].name);
-			values.push($input.val());
+			row[$input[0].name] = $input.val();
 		});
 		
+		return app.utils.getSqlUpdateFromRow (tableName, row, id);
+	},
+	
+	getSqlUpdateFromRow: function (tableName, row, id) {
 		var update = !!id;
+		var names = [];
+		var values = [];
+		
+		for (var key in row) {
+			if (update || key !== "Id") { // Don't include the Id field if we're inserting. (For bulk import of backup data)
+				names.push(key);
+				values.push(row[key]);
+			}
+		}
+		
 		var result;
 		
 		if (update) {
 			var kvps = [];
 			$.each(names, function(i){
+				
 				kvps.push(names[i] + "='" + values[i] + "'");
 			});
 			kvpList = kvps.join(",");
@@ -39,7 +52,7 @@ window.app.utils = {
 			var columnList = "(" + names.join(",") + ")";
 			var valueList = "('" + values.join("','") + "')";
 			result = "INSERT INTO " + tableName + " " + columnList + " VALUES " + valueList + ";";
-		}	
+		}
 		
 		return result;
 	},
@@ -57,8 +70,7 @@ window.app.utils = {
 					console.error("Error: " + error.message + " when processing " + statement);
 				}
 			);
-		});
-			
+		});			
 		
 		html5sql.logInfo = true;
 		html5sql.logErrors = true;
@@ -100,6 +112,58 @@ window.app.utils = {
 	saveJSON: function (obj) {
 		var json = JSON.stringify(obj);
 		window.open( "data:text/json;charset=utf-8," + escape(json))
+	},
+	
+	exportData: function (onSuccess) {
+		html5sql.process(["SELECT * FROM Movies;"],
+			function(transaction, results, rowArray) {
+			
+				onSuccess = onSuccess || function() {};
+			
+				$.ajax({
+					url: "save.njs",
+					type: "POST",
+					data: JSON.stringify(rowArray),
+					success: function(data, textStatus, jqXHR ) {
+						console.log(data);
+						onSuccess();
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log("Error: " + textStatus + ", " + errorThrown);
+					}
+				});
+			
+				//app.utils.saveJSON(rowArray);
+			
+				/*
+				var url = app.utils.getDataUri(rowArray);
+				app.utils.downloadUrl(url);
+				*/
+				
+				/*
+				var rowsToJson = JSON.stringify(rowArray);
+				 
+				window.URL = window.URL || window.webkitURL;						
+				
+				//var blob = new Blob([rowsToJson], {'type':'application\/json'});
+				
+				var blob = new NewBlob(rowsToJson, "application\/json");
+				blob = blob.blob;
+				
+				var a = document.createElement('a');
+				a.href = window.URL.createObjectURL(blob);
+				
+				console.log(a.href);
+				
+				a.download = "movies-" + new Date() + ".json";
+				a.click();
+				*/
+				
+				
+			}, function() {
+			
+			}
+		);
 	}
 };
 
@@ -171,7 +235,7 @@ window.app.views = {
 
 		$('#main_screen').on('pageshow', function(event, ui) {			
 			if (sessionStorage.getItem('success') == 'yes' ) {
-				alert('Movie added sucessfully');
+				//alert('Movie added sucessfully');
 				sessionStorage.setItem('success', 'no');
 			}
 		});
@@ -212,14 +276,18 @@ window.app.views = {
 
 				html5sql.process(
 					[ sql ],
-					function(){
-						
+					function() {						
 						// success flag using session storage
-						// useful becuase index.html can display a nice message to use on success
-						
+						// useful becuase index.html can display a nice message to use on success						
 						sessionStorage.setItem('success', 'yes');
-						
-						$.mobile.changePage("index.html");
+
+						if ("" + localStorage["exportOnEachSave"] == "true") {
+							app.utils.exportData(function() {
+								$.mobile.changePage("index.html");
+							});
+						} else {
+							$.mobile.changePage("index.html");
+						}			
 						
 					},
 					function(error, statement) {
@@ -291,17 +359,13 @@ window.app.views = {
 			
 				var html = '';
 
-				$.each(rowArray, function(index, value) { 
-				
-				  html += "<li><a href='new_movie.html' class='ui-link-inherit movie-link' data-movieid='" + value.Id + "' data-rel='dialog' data-transition='pop'>" + 
-					//value.DateWatched + ": " + 
-					value.Title + " (" + value.ReleaseYear + ")</a></li>";
-				  
+				$.each(rowArray, function(index, value) { 				
+					html += "<li><a href='new_movie.html' class='ui-link-inherit movie-link' data-movieid='" + value.Id + "' data-rel='dialog' data-transition='pop'>" + 
+						//value.DateWatched + ": " + 
+						value.Title + " (" + value.ReleaseYear + ")</a></li>";
 				});
 				
-				html += '</ul>';
-				
-				$('#movie_list').append(html);
+				$('#movie_list').html(html);
 				$('#movie_list').listview('refresh');
 				
 				$('#movie_list .movie-link').on("click", function (e) {
@@ -315,23 +379,71 @@ window.app.views = {
 		);
 	},
 	
+	settingsInputs: [{
+		key: "parentalFilter",
+		def: 10,
+		onchange: function() {
+			sessionStorage.setItem('refreshSavedMovies', true);
+		}
+	}, {
+		key: "exportOnEachSave",
+		def: false
+	}],
+	
 	settings: function() {
 		$("#tools").on('pageinit', function() {
-
-			$("#parentalFilter").on("change", function() {
-				localStorage["parentalFilter"] = $(this).val();
-				sessionStorage.setItem('refreshSavedMovies', true)
-			});
+		
+			var bind = function(inputs) {
+				$.each(inputs, function (i, input) {
+					var selector = "#" + input.key;
+					var $input = $(selector);
+					
+					// localStorage is our model.
+					localStorage[input.key] = localStorage[input.key] || input.def;					
+					$input.val(localStorage[input.key]);
+					
+					$input.on("change", function (e) {
+						localStorage[input.key] = $(this).val();
+						
+						if (!!input.onchange)
+							input.onchange(e);
+					});
+				});
+			};
+			
+			bind(app.views.settingsInputs);
 		
 			$("#importData").on("click", function(e) {
 				e.preventDefault();
 				
-				if (confirm("Are you sure you want to overwrite your data and import?")) {
+				if (confirm("Are you sure you want to overwrite your data and import?")) {				
 					html5sql.process(
 						"DROP TABLE Movies",
 						function(){
 							app.utils.runDbSetup(function () {
-								app.utils.runSqlFromFile('import.sql.txt', true);
+								//app.utils.runSqlFromFile('import.sql.txt', true);
+								
+								$.get("data/data.json.txt", function(json) {
+									var data = JSON.parse(json);
+									var statements = [];
+									
+									$.each(data, function (i, row) {
+										statements.push(app.utils.getSqlUpdateFromRow("Movies", row));										
+									});
+									
+									html5sql.process(
+										statements,
+										function() {
+											app.views.renderSavedMovies();
+											alert("Imported data.");
+											console.log("Successfully imported data");											
+										},
+										function(error, statement){
+											console.error("Error: " + error.message + " when processing " + statement);
+										}
+									);
+								});
+								
 							});
 						},
 						function(error, statement){
@@ -341,52 +453,39 @@ window.app.views = {
 				}
 			});
 
-			$("#downloadData").on("click", function(e) {
+			$("#exportData").on("click", function(e) {
+				e.preventDefault();
+				app.utils.exportData(function () {
+					alert("Data exported.");
+				});
+			});
+			
+			$("#test").on("click", function(e) {
 				e.preventDefault();
 				
-				var downloadJson = function() {
-					html5sql.process(["SELECT * FROM Movies;"],
-						function(transaction, results, rowArray){
-						
-							app.utils.saveJSON(rowArray);
-						
-							/*
-							var url = app.utils.getDataUri(rowArray);
-							app.utils.downloadUrl(url);
-							*/
-							
-							/*
-							var rowsToJson = JSON.stringify(rowArray);
-							 
-							window.URL = window.URL || window.webkitURL;						
-							
-							//var blob = new Blob([rowsToJson], {'type':'application\/json'});
-							
-							var blob = new NewBlob(rowsToJson, "application\/json");
-							blob = blob.blob;
-							
-							var a = document.createElement('a');
-							a.href = window.URL.createObjectURL(blob);
-							
-							console.log(a.href);
-							
-							a.download = "movies-" + new Date() + ".json";
-							a.click();
-							*/
-							
-							
-						}, function() {
-						
-						}
-					);
-				};
-				
-				downloadJson();
+				$.ajax({
+					url: "save.njs",
+					type: "POST",
+					data: JSON.stringify({
+						field1: "THis is field 1",
+						field2: [
+							"I",
+							"like",
+							"cheese"
+						]
+					}),
+					success: function(data, textStatus, jqXHR ) {
+						console.log(data);
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log("Error: " + textStatus + ", " + errorThrown);
+					}
+				});
 			});
 		});
 		
 		$("#tools").on('pagebeforeshow', function() {
-			$("#parentalFilter").val(localStorage["parentalFilter"] || 10);
+			$("#exportOnEachSave").slider("refresh");
 		});
 	}
 	

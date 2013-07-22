@@ -1,0 +1,2 @@
+Application has thrown an uncaught exception and is terminated:
+Error: ENOENT, open 'c:\code\moviedb\dataMon Jul 22 2013 13:33:16 GMT-0700 (Pacific Daylight Time).json'
