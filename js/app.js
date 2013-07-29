@@ -4,18 +4,27 @@ window.app = {};
 // Utils
 //
 window.app.utils = {
+	Consts: {
+		formInputSelector: "input[type='text'], textarea, input[type='date'], input[type='number']"
+	},
+
 	toggleEditMode: function (editable, $form) {
 		var $form = $form || $("form").eq(0);
-		var $inputs = $form.find("input[type='text'], textarea, input[type='date'], input[type='number']");
+		var $inputs = $form.find(app.utils.Consts.formInputSelector);
 		
 		$inputs.toggleClass("ui-disabled", !editable);
+	},
+	
+	clearForm: function ($form) {
+		var $form = $form || $("form").eq(0);
+		$form.find(app.utils.Consts.formInputSelector).val("");
 	},
 
 	getSqlUpdateFromForm: function (tableName, $form, id) {
 		// TODO: Dropdowns, checkboxes, radio buttons
 		//
 		var $form = $form || $("form").eq(0);
-		var $inputs = $form.find("input[type='text'], textarea, input[type='date'], input[type='number']");		
+		var $inputs = $form.find(app.utils.Consts.formInputSelector);		
 		var row = {};
 		
 		$inputs.each(function(i, obj){
@@ -253,8 +262,7 @@ window.app.views = {
 			
 			$form.find(".cancel").on("click", function(e) {
 				e.preventDefault();
-				$form.find("input[type='text'], textarea, input[type='date'], input[type='number']").val("");
-				$page.attr("data-mode", "editing");
+				app.utils.clearForm();
 				$.mobile.changePage("index.html");
 			});
 
@@ -280,6 +288,7 @@ window.app.views = {
 						// success flag using session storage
 						// useful becuase index.html can display a nice message to use on success						
 						sessionStorage.setItem('success', 'yes');
+						sessionStorage.setItem('refreshSavedMovies', true);
 
 						if ("" + localStorage["exportOnEachSave"] == "true") {
 							app.utils.exportData(function() {
@@ -325,8 +334,9 @@ window.app.views = {
 					}, function() {
 					
 					}
-				);
-				
+				);				
+			} else {
+				$page.attr("data-mode", "editing");
 			}
 		});
 	},
@@ -340,7 +350,7 @@ window.app.views = {
 		$("#saved_movies").on('pagebeforeshow', function() {
 			if ("" + sessionStorage.getItem('refreshSavedMovies') == "true") {
 				app.views.renderSavedMovies();
-				sessionStorage.setItem('refreshSavedMovies', false)
+				sessionStorage.setItem('refreshSavedMovies', false);
 			}
 		});
 	},
@@ -353,7 +363,7 @@ window.app.views = {
 		html5sql.putSelectResultsInArray = true;
 		html5sql.process(
 			[
-				"SELECT * FROM Movies WHERE Inaccessibility <= " + model.parentalFilter + " ORDER BY DateWatched DESC;"
+				"SELECT * FROM Movies WHERE Inaccessibility <= " + model.parentalFilter + " OR Inaccessibility = '' ORDER BY DateWatched DESC, Id;"
 			],
 			function(transaction, results, rowArray) {
 			
