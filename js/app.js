@@ -363,7 +363,7 @@ window.app.views = {
 		html5sql.putSelectResultsInArray = true;
 		html5sql.process(
 			[
-				"SELECT * FROM Movies WHERE Inaccessibility <= " + model.parentalFilter + " OR Inaccessibility = '' ORDER BY DateWatched DESC, Id;"
+				"SELECT * FROM Movies WHERE Inaccessibility <= " + model.parentalFilter + " OR Inaccessibility = '' ORDER BY DateWatched DESC, Id DESC;"
 			],
 			function(transaction, results, rowArray) {
 			
