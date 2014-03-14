@@ -433,7 +433,7 @@ window.app.views = {
 							app.utils.runDbSetup(function () {
 								//app.utils.runSqlFromFile('import.sql.txt', true);
 								
-								$.get("data/data.json.txt", function(json) {
+								$.get("data/data.json.txt?__v=" + (new Date()).getMilliseconds(), function(json) {
 									var data = JSON.parse(json);
 									var statements = [];
 									

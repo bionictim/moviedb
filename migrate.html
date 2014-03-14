@@ -1,0 +1,412 @@
+<html>
+<head>
+  <title>Movie DB Migration Tool</title>
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      window.data = null;
+      window.migration = [];
+
+      function load(callback) {
+        $.get("data/data-migration.json.txt?__v=" + (new Date()).getMilliseconds(), function (json) {
+          data = JSON.parse(json);
+          callback();
+        });
+      }
+
+      function init() {
+        var cachedMigration = localStorage.getItem("migration");
+        migration = !!cachedMigration ? JSON.parse(cachedMigration) : [];
+        migration = migration instanceof Array ? migration : [migration];
+
+        initData(data, migration);
+
+        $(".container pre").on("click", "span", function (e) {
+          var $clicked = $(this);
+          if ($clicked.html() === '"Id":') {
+            var $id = $clicked.next();
+            var index = parseInt($id.html()) - 1;
+            var script = "data[" + index + "]." + prompt("Enter script");
+
+            var success = runEvalMigrationItem(data, script);
+
+            if (success) {
+              addMigrationItem(migration, {
+                operation: "eval",
+                script: script
+              });
+
+              updateMigration(migration);
+              renderData(data);
+            }
+          }
+        });
+
+        $(".controls button[name='doEval']").on("click", function (e) {
+          e.preventDefault();
+          var selector = $(".controls input[name='evalSelectorInput']").val();
+          var itemScript = $(".controls input[name='evalScriptInput']").val();
+          var script = "_.each(_.filter(data, function (movie) { return " + selector + ";}), function (movie) { " + itemScript + ";});"
+         
+          var success = runEvalMigrationItem(data, script);
+
+          if (success) {
+            addMigrationItem(migration, {
+              operation: "eval",
+              script: script
+            });
+
+            updateMigration(migration);
+            renderData(data);
+          }
+        });
+
+        $(".controls button[name='doReplace']").on("click", function (e) {
+          e.preventDefault();
+          var find = $(".controls input[name='findInput']").val();
+          var replace = $(".controls input[name='replaceInput']").val();
+
+          replaceStringInAllTags(data, find, replace);
+
+          addMigrationItem(migration, {
+            operation: "replace",
+            find: find,
+            replace: replace
+          });
+
+          updateMigration(migration);
+          renderData(data, replace);
+        });
+
+        $(".controls button[name='doTagToSubcategory']").on("click", function (e) {
+          e.preventDefault();
+          var tag = $(".controls input[name='tagToSubcatTagInput']").val();
+          var subcategory = $(".controls input[name='tagToSubcatSubcatInput']").val();
+          var category = $(".controls input[name='tagToSubcatCategoryInput']").val();
+          var preserveTag = $("input[name='preserveTag']").is(":checked");
+
+          moveTagToSubcategory(data, tag, subcategory, category, preserveTag);
+
+          addMigrationItem(migration, {
+            operation: "tagToSubcategory",
+            find: tag,
+            subcategory: subcategory,
+            category: category,
+            preserveTag: preserveTag
+          });
+
+          updateMigration(migration);
+          renderData(data, subcategory);
+        });
+
+        $(".migration.section").on("click", "li[data-index]", function (e) {
+          var $item = $(this);
+          var index = parseInt($item.data("index"));
+          if (confirm("Do you want to remove this migration item? (" + migration[index].find || migration[index].index + ")")) {
+            removeMigrationItem(migration, index);
+            load(function () {
+              initData(data, migration);
+            });
+          }
+        });
+      }
+
+      function initData(data, migration) {
+        data.forEach(function (movie) {
+          ["CategoriesArray", "SubcategoriesArray"].forEach(function (field) {
+            if (!movie.hasOwnProperty(field))
+              movie[field] = [];
+          });
+
+          setTagsArrayFromTags(movie);
+        });
+
+        runMigration(data, migration);
+        renderData(data);
+      }
+
+      function runMigration(data, migration) {
+        migration.forEach(function (item) {
+          if (item.operation === "replace")
+            replaceStringInAllTags(data, item.find, item.replace);
+          else if (item.operation === "eval")
+            runEvalMigrationItem(data, item.script);
+          else if (item.operation === "tagToSubcategory")
+            moveTagToSubcategory(data, item.find, item.subcategory, item.category, item.preserveTag);
+        });
+
+        updateMigration(migration);
+      }
+
+      function updateMigration(migration) {
+        var $list = $("<ol>");
+        migration.forEach(function (item, i) {
+          var $item = $("<li data-index='" + i + "'>");
+
+          if (item.operation === "replace")
+            $item.html("Replace " + item.find + " with " + item.replace);
+          else if (item.operation === "eval")
+            $item.html("Eval " + item.script);
+          else if (item.operation === "tagToSubcategory")
+            $item.html("Move tag " + item.find + " to " + (!!item.category ? " category " : " subcategory ") + (item.category || item.subcategory));
+
+          $list.append($item);
+        });
+        $(".migration.section").html("").append($list);
+      }
+
+      function addMigrationItem(migration, item) {
+        migration.push(item);
+        localStorage.setItem("migration", JSON.stringify(migration));
+      }
+
+      function removeMigrationItem(migration, index) {
+        migration.splice(index, 1);
+        localStorage.setItem("migration", JSON.stringify(migration));
+      }
+
+      function renderData(data, highlight) {
+        $(".container pre").html(JSON.stringify(data, undefined, 2));
+        //$(".container pre").html(syntaxHighlight(data, highlight));
+      }
+
+      function syntaxHighlight(json, highlight) {
+        if (typeof json != 'string') {
+          json = JSON.stringify(json, undefined, 2);
+        }
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+          var cls = 'number';
+          if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+              cls = 'key';
+            } else {
+              cls = 'string';
+            }
+          } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+          } else if (/null/.test(match)) {
+            cls = 'null';
+          }
+
+          if (!!highlight)
+            match = replaceAll(highlight, "<span class='highlight'>" + highlight + "</span>", match);
+
+          return '<span class="' + cls + '">' + match + '</span>';
+        });
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+      }
+
+      function replaceAll(find, replace, str) {
+        return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+      }
+
+      function setTagsArrayFromTags(movie) {
+        var tags = movie.Tags.split(",");
+
+        for (var i = 0, len = tags.length; i < len; i++) {
+          tags[i] = tags[i].trim();
+        }
+
+        movie.TagsArray = tags;
+      }
+
+      function setTagsFromTagsArray(movie) {
+        movie.Tags = movie.TagsArray.join(", ");
+      }
+
+      // Migration functions
+      function replaceStringInAllTags(data, find, replace) {
+        data.forEach(function (movie) {
+          movie.Tags = replaceAll(find, replace, movie.Tags);
+          setTagsArrayFromTags(movie);
+        });
+      }
+
+      function runEvalMigrationItem(data, script) {
+        var failed = false;
+
+        try {
+          console.log(script);
+          eval(script);
+        } catch (ex) {
+          failed = true;
+          alert(ex);
+        }
+
+        return !failed;
+      }
+
+      function moveTagToSubcategory(data, tag, subcatInput, categoryInput, preserveTag) {
+        var categoryInputs = [];
+
+        if (!!categoryInput)
+          categoryInputs.push(categoryInput);
+        else {
+          Object.keys(categories).forEach(function (category) {
+            categories[category].forEach(function (subcategory) {
+              if (subcategory === subcatInput) {
+                categoryInputs.push(category);
+              }
+            });
+          });
+        }
+
+        data.forEach(function (movie) {
+          var index = -1;
+          for (var i = 0, len = movie.TagsArray.length; i < len; i++) {
+            if (movie.TagsArray[i] === tag) {
+              index = i;
+              break;
+            }
+          }
+
+          if (index > -1) {
+            if (!preserveTag)
+              movie.TagsArray.splice(index, 1);
+
+            if (!categoryInput) {
+              if (-1 == $.inArray(subcatInput, movie.SubcategoriesArray))
+                movie.SubcategoriesArray.push(subcatInput);
+            }
+
+            if (categoryInputs.length > 0) {
+              categoryInputs.forEach(function (catInput) {
+                if (-1 == $.inArray(catInput, movie.CategoriesArray))
+                  movie.CategoriesArray.push(catInput);
+              });
+            }
+
+            setTagsFromTagsArray(movie);
+          }
+        });
+      };
+
+      window.categories = {};
+      categories["gore & disturbing"] = ["torture", "splatter", "cannibal", "extreme"];
+      categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic"];
+      categories["killer"] = ["slasher", "crime & giallo", "bumpkin & redneck", "home invasion & survival"];
+      categories["monster"] = ["vampire", "werewolf", "classic & mythological", "giant monsters", "sci-fi & aliens", "neo-monsters", "animals & nature", "small creatures"];
+      categories["zombies"] = ["undead", "virus"];
+      categories["paranormal"] = ["ghost & spirits", "haunted house", "possession", "devil & demon & hell", "witches & occult & religion", "supernatural power"];
+
+      // DO EEET!!!
+      load(function () {
+        init(data, migration);
+      });
+
+    });
+  </script>
+  <style type="text/css">
+    pre {
+      outline: 1px solid #ccc;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .string {
+      color: green;
+    }
+
+    .number {
+      color: darkorange;
+    }
+
+    .boolean {
+      color: blue;
+    }
+
+    .null {
+      color: magenta;
+    }
+
+    .key {
+      color: red;
+    }
+
+    .highlight {
+      background: yellow;
+    }
+
+    .section {
+      clear: both;
+      float: left;
+      padding: 5px;
+      width: 100%;
+    }
+
+    .controls {
+      background: #e5e4e4;
+    }
+
+      .controls .control-group {
+        clear: both;
+      }
+
+        .controls .control-group > * {
+          display: inline-block;
+          float: left;
+        }
+
+    .data.section {
+      height: 70%;
+      overflow-y: scroll;
+    }
+    .migration.section {
+      height: 20%;
+      overflow-y: scroll;
+    }
+
+    label {
+      width: 90px;
+      text-align: right;
+      padding-right: 4px;
+    }
+    input[type='text'] {
+      width: 130px;
+    }
+    input[type='text'].wider {
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="controls section">
+      <div class="control-group">
+        <label for="findInput">Replace:</label>
+        <input type="text" name="findInput" />
+        <label for="replaceInput">With:</label>
+        <input type="text" name="replaceInput" />
+        <button name="doReplace">OK</button>
+      </div>
+      <div class="control-group">
+        <label for="tagToSubcatTagInput">Move tag:</label>
+        <input type="text" name="tagToSubcatTagInput" />
+        <label for="tagToSubcatSubcatInput">To subcat.:</label>
+        <input type="text" name="tagToSubcatSubcatInput" />
+        <label for="tagToSubcatCategoryInput">Or category:</label>
+        <input type="text" name="tagToSubcatCategoryInput" />
+        <label for="preserveTag">Preserve Tag:</label>
+        <input type="checkbox" name="preserveTag" />
+        <button name="doTagToSubcategory">OK</button>
+      </div>
+      <div class="control-group">
+        <label for="evalSelectorInput">Select:</label>
+        <input type="text" name="evalSelectorInput" class="wider" />
+        <label for="evalScriptInput">Run Script:</label>
+        <input type="text" name="evalScriptInput" class="wider" />
+        <button name="doEval">OK</button>
+      </div>
+    </div>
+    <div class="migration section"></div>
+    <div class="data section">
+      <pre></pre>
+    </div>
+  </div>
+</body>
+</html>
