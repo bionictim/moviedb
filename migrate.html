@@ -9,14 +9,14 @@
       window.migration = [];
 
       function load(callback) {
-        $.get("data/data-migration.json.txt?__v=" + (new Date()).getMilliseconds(), function (json) {
+        $.get("data/data.json.txt?__v=" + (new Date()).getMilliseconds(), function (json) {
           data = JSON.parse(json);
           callback();
         });
       }
 
       function init() {
-        var cachedMigration = localStorage.getItem("migration");
+        var cachedMigration = localStorage.getItem("migrations");
         migration = !!cachedMigration ? JSON.parse(cachedMigration) : [];
         migration = migration instanceof Array ? migration : [migration];
 
@@ -48,7 +48,7 @@
           var selector = $(".controls input[name='evalSelectorInput']").val();
           var itemScript = $(".controls input[name='evalScriptInput']").val();
           var script = "_.each(_.filter(data, function (movie) { return " + selector + ";}), function (movie) { " + itemScript + ";});"
-         
+
           var success = runEvalMigrationItem(data, script);
 
           if (success) {
@@ -158,12 +158,12 @@
 
       function addMigrationItem(migration, item) {
         migration.push(item);
-        localStorage.setItem("migration", JSON.stringify(migration));
+        localStorage.setItem("migrations", JSON.stringify(migration));
       }
 
       function removeMigrationItem(migration, index) {
         migration.splice(index, 1);
-        localStorage.setItem("migration", JSON.stringify(migration));
+        localStorage.setItem("migrations", JSON.stringify(migration));
       }
 
       function renderData(data, highlight) {
@@ -217,6 +217,23 @@
 
       function setTagsFromTagsArray(movie) {
         movie.Tags = movie.TagsArray.join(", ");
+        movie.Categories = movie.CategoriesArray.join(", ");
+        movie.Subcategories = movie.SubcategoriesArray.join(", ");
+      }
+
+      function removeTag(movie, tag) {
+        var index = -1;
+        for (var i = 0, len = movie.TagsArray.length; i < len; i++) {
+          if (movie.TagsArray[i] === tag) {
+            index = i;
+            break;
+          }
+        }
+
+        if (index > -1) {
+          movie.TagsArray.splice(index, 1);
+          setTagsFromTagsArray(movie);
+        }
       }
 
       // Migration functions
@@ -241,7 +258,8 @@
         return !failed;
       }
 
-      function moveTagToSubcategory(data, tag, subcatInput, categoryInput, preserveTag) {
+      function moveTagToSubcategory(data, tag, subcatInput, categoryInput, preserveTag, existingTagOptional) {
+        var tagIsOptional = (data.length !== window.data.length);
         var categoryInputs = [];
 
         if (!!categoryInput)
@@ -265,10 +283,11 @@
             }
           }
 
-          if (index > -1) {
-            if (!preserveTag)
-              movie.TagsArray.splice(index, 1);
+          if (index > -1 && !preserveTag) {
+            movie.TagsArray.splice(index, 1);
+          }
 
+          if (index > -1 || tagIsOptional) {
             if (!categoryInput) {
               if (-1 == $.inArray(subcatInput, movie.SubcategoriesArray))
                 movie.SubcategoriesArray.push(subcatInput);
@@ -289,9 +308,8 @@
       window.categories = {};
       categories["gore & disturbing"] = ["torture", "splatter", "cannibal", "extreme"];
       categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic"];
-      categories["killer"] = ["slasher", "crime & giallo", "bumpkin & redneck", "home invasion & survival"];
-      categories["monster"] = ["vampire", "werewolf", "classic & mythological", "giant monsters", "sci-fi & aliens", "neo-monsters", "animals & nature", "small creatures"];
-      categories["zombies"] = ["undead", "virus"];
+      categories["killer"] = ["slasher", "crime & giallo", "bumpkin & redneck", "home invasion & survival", "evil child"];
+      categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "giant monsters", "sci-fi & aliens", "neo-monsters", "animals & nature", "small creatures"];
       categories["paranormal"] = ["ghost & spirits", "haunted house", "possession", "devil & demon & hell", "witches & occult & religion", "supernatural power"];
 
       // DO EEET!!!
@@ -356,6 +374,7 @@
       height: 70%;
       overflow-y: scroll;
     }
+
     .migration.section {
       height: 20%;
       overflow-y: scroll;
@@ -366,12 +385,14 @@
       text-align: right;
       padding-right: 4px;
     }
+
     input[type='text'] {
       width: 130px;
     }
-    input[type='text'].wider {
-      width: 300px;
-    }
+
+      input[type='text'].wider {
+        width: 300px;
+      }
   </style>
 </head>
 <body>

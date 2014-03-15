@@ -5,6 +5,8 @@ CREATE TABLE Movies (
 	Genre			VARCHAR(100),
 	Director		VARCHAR(255),
 	DateWatched 	DATETIME,
+    Categories      VARCHAR(255),
+    Subcategories   VARCHAR(255),
 	Tags 			VARCHAR(255),
 	Rating 			INT,
 	Inaccessibility INT,
