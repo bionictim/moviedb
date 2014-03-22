@@ -1,0 +1,16 @@
+﻿<ul class="tags">
+  <% for (var i = 0, len = this["length"]; i < len; i++) { %>
+    <li>
+      <input type="checkbox" 
+        data-navtype="Tags"
+        data-navvalue="<%= this[i].tag %>" />
+      <a href=""
+        data-navtype="Tags"
+        data-navvalue="<%= this[i].tag %>"
+        data-singlevalue="true">
+        <%= this[i].tag %>
+      </a>
+      <span>(<%= this[i].count %>)</span>
+    </li>
+  <% } %>
+</ul>

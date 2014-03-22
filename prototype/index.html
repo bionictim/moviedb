@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title></title>
+  <link rel="stylesheet" href="css/app.css" />
+
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+  <script src="lib/ejs_production.js"></script>
+  
+  <script src="app/app.js"></script>
+  <script src="app/class.js"></script>
+  <script src="services/dataService.js"></script>
+  <script src="model/categories.js"></script>
+  <script src="model/program.js"></script>
+  <script src="viewModel/categoriesViewModel.js"></script>
+  <script src="viewModel/programListViewModel.js"></script>
+  <script src="viewModel/programBrowserViewModel.js"></script>
+  <script src="viewModel/infoViewModel.js"></script>
+  <script src="viewModel/toolViewModel.js"></script>
+  <script src="controllers/baseController.js"></script>
+  <script src="controllers/navController.js"></script>
+  <script src="controllers/infoController.js"></script>
+  <script src="controllers/toolController.js"></script>
+  <script src="controllers/programBrowserController.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function () {
+      App.Main.init();
+    });
+  </script>
+  <style type="text/css">
+    .templates {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="layoutRoot">
+    <div class="nav-view">
+      <ul>
+        <li class="nav-item" data-section="tool">
+          <a href="">Tool</a>
+        </li>
+        <li class="nav-item" data-section="info">
+          <a href="">Info</a>
+        </li>
+      </ul>
+    </div>
+    <div class="nav-sections">
+      <div class="nav-section" data-section="tool">
+        TOOL
+      </div>
+      <div class="nav-section" data-section="info">
+        INFO
+      </div>
+    </div>
+  </div>
+</body>
+</html>

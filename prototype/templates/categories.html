@@ -1,0 +1,48 @@
+﻿<ul class="categories">
+  <% for (var category in categories) { %>
+    <li>
+      <% if (isNavigator) { %>
+        <input type="checkbox" 
+          data-navtype="Categories"
+          data-navvalue="<%= category %>" />
+        <a href=""
+          data-navtype="Categories"
+          data-navvalue="<%= category %>"
+          data-singlevalue="true">
+          <%= category %>
+        </a>
+      <% } else { %>
+        <span><%= category %>:</span>
+        <span>
+          <%= _.filter(programs, function(program) { return _.contains(program.CategoriesArray, category);}).length %>
+        </span>
+      <% } %>
+      <% if (!!categories[category] && categories[category].length > 0) { %>
+        <ul>
+          <% for (var i = 0, len = categories[category].length; i < len; i++) { %>
+            <li>
+              <% if (isNavigator) { %>
+                <input type="checkbox" 
+                  data-navtype="Subcategories"
+                  data-navvalue="<%= categories[category][i] %>">
+                <a href=""
+                  data-navtype="Subcategories"
+                  data-navvalue="<%= categories[category][i] %>"
+                  data-singlevalue="true">
+                  <%= categories[category][i] %>
+                </a>
+              <% } else { %>
+                <span>
+                  <%= categories[category][i] %>:
+                </span>
+                <span>
+                  <%= _.filter(programs, function(program) { return _.contains(program.SubcategoriesArray, categories[category][i]);}).length %>
+                </span>
+              <% } %>
+            </li>
+          <% } %>
+        </ul>
+      <% } %>
+    </li>
+  <% } %>
+</ul>

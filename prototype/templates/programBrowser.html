@@ -1,0 +1,5 @@
+﻿<div class="content-browser">
+  <% for (var i = 0, len = programLists.length; i < len; i++) { %>
+    <%= App.Controller.Base.renderHtml("programList", programLists[i]) %>
+  <% } %>
+</div>

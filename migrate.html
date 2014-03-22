@@ -79,6 +79,23 @@
           renderData(data, replace);
         });
 
+        $(".controls button[name='doRename']").on("click", function (e) {
+          e.preventDefault();
+          var find = $(".controls input[name='renameInput']").val();
+          var replace = $(".controls input[name='renameToInput']").val();
+
+          renameSubcategory(data, find, replace);
+
+          addMigrationItem(migration, {
+            operation: "rename",
+            find: find,
+            replace: replace
+          });
+
+          updateMigration(migration);
+          renderData(data, replace);
+        });
+
         $(".controls button[name='doTagToSubcategory']").on("click", function (e) {
           e.preventDefault();
           var tag = $(".controls input[name='tagToSubcatTagInput']").val();
@@ -100,6 +117,26 @@
           renderData(data, subcategory);
         });
 
+        $(".controls button[name='export']").on("click", function (e) {
+          if (confirm("Do you want to export this migration?")) {
+            exportData(data, function () {
+              var date = new Date();
+              var key = "migrations-run-" + date.getYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getSeconds() + "-" + date.getMilliseconds();
+              localStorage.setItem(key, localStorage.getItem("migrations"));
+              localStorage.removeItem("migrations");
+              location.reload();
+            });
+          }
+        });
+
+        $(".controls button[name='getImages']").on("click", function (e) {
+          if (confirm("Do you want to fetch the poster art?")) {
+            getImages(data).then(function () {
+              renderData(data);
+            });
+          }
+        });
+
         $(".migration.section").on("click", "li[data-index]", function (e) {
           var $item = $(this);
           var index = parseInt($item.data("index"));
@@ -108,6 +145,98 @@
             load(function () {
               initData(data, migration);
             });
+          }
+        });
+      }
+
+      $.whenall = function (arr) {
+        return $.when.apply($, arr).pipe(function () {
+          return Array.prototype.slice.call(arguments);
+        });
+      };
+
+      function getImages(data) {
+        var deferred = $.Deferred();
+
+        var basePosterPath = "http://image.tmdb.org/t/p/";
+
+        var maxCount = data.length;
+        var currentIndex = 0;
+        var pageSize = 10;
+
+        var fetchBatch = function () {
+          var itemBatch = data.slice(currentIndex, currentIndex + pageSize);
+
+          var promises = _.map(_.filter(itemBatch, function (item) {
+            return !item.TmdbPosterPath;
+          }), function (item) {
+            return requestMovieData(item);
+          });
+
+          $.whenall(promises).done(function (args) {
+            console.log("Fetchs Complete");
+            console.log(args);
+          });
+
+          currentIndex += pageSize;
+          if (currentIndex < maxCount - 1)
+            fetchBatch();
+          else
+            deferred.resolve();
+        }
+
+        fetchBatch();
+
+        return deferred.promise();
+      };
+
+      function requestMovieData(movie) {
+        var deferred = $.Deferred();
+
+        var url = "http://api.themoviedb.org/3/search/movie?api_key=04648b4bb8120607e0a82c88196d0d0c&query={0}";
+        var movieTitle = movie.Title.split(" (")[0];
+
+        $.ajax({
+          url: url.replace("{0}", encodeURIComponent(movieTitle)),
+          type: "GET",
+          success: function (data, textStatus, jqXHR) {
+            var result = !!data.results ? data.results[0] : null;
+            if (!!result) {
+              var posterPath = result.poster_path;
+              movie.TmdbPosterPath = posterPath;
+            }
+            deferred.resolve(data, posterPath);
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+            console.log("Error: " + textStatus + ", " + errorThrown);
+          }
+        });
+
+        return deferred.promise();
+      };
+
+      function exportData(data, onSuccess) {
+        onSuccess = onSuccess || function () { };
+        var exportData = [];
+
+        _.each(data, function (movie) {
+          var exportMovie = $.extend(true, {}, movie);
+          ["CategoriesArray", "SubcategoriesArray", "TagsArray"].forEach(function (key) {
+            delete exportMovie[key];
+          });
+          exportData.push(exportMovie);
+        });
+
+        $.ajax({
+          url: "save.njs",
+          type: "POST",
+          data: JSON.stringify(exportData),
+          success: function (data, textStatus, jqXHR) {
+            console.log(data);
+            onSuccess();
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+            console.log("Error: " + textStatus + ", " + errorThrown);
           }
         });
       }
@@ -123,6 +252,7 @@
         });
 
         runMigration(data, migration);
+        //data = _.reject(data, function (movie) { return (movie.Genre.indexOf("horror") < 0 && -1 == $.inArray("horror", movie.TagsArray)) || movie.Title.indexOf("Daruma") > 0 || movie.Title == "Baise Moi" });
         renderData(data);
       }
 
@@ -130,6 +260,8 @@
         migration.forEach(function (item) {
           if (item.operation === "replace")
             replaceStringInAllTags(data, item.find, item.replace);
+          if (item.operation === "rename")
+            renameSubcategory(data, item.find, item.replace);
           else if (item.operation === "eval")
             runEvalMigrationItem(data, item.script);
           else if (item.operation === "tagToSubcategory")
@@ -146,6 +278,8 @@
 
           if (item.operation === "replace")
             $item.html("Replace " + item.find + " with " + item.replace);
+          if (item.operation === "rename")
+            $item.html((!item.replace ? "Remove " : "Replace ") + item.find + " with " + item.replace);
           else if (item.operation === "eval")
             $item.html("Eval " + item.script);
           else if (item.operation === "tagToSubcategory")
@@ -206,19 +340,33 @@
       }
 
       function setTagsArrayFromTags(movie) {
-        var tags = movie.Tags.split(",");
+        ["Tags", "Categories", "Subcategories"].forEach(function (key) {
 
-        for (var i = 0, len = tags.length; i < len; i++) {
-          tags[i] = tags[i].trim();
-        }
+          var tags = (movie[key] || "").split(",");
 
-        movie.TagsArray = tags;
+          for (var i = 0, len = tags.length; i < len; i++) {
+            tags[i] = tags[i].trim();
+          }
+
+          tags = _.filter(tags, function (t) {
+            return !!t;
+          });
+
+          movie[key + "Array"] = tags;
+        });
       }
 
       function setTagsFromTagsArray(movie) {
         movie.Tags = movie.TagsArray.join(", ");
         movie.Categories = movie.CategoriesArray.join(", ");
         movie.Subcategories = movie.SubcategoriesArray.join(", ");
+      }
+
+      function addTag(movie, tag) {
+        if (!_.contains(movie.TagsArray, tag)) {
+          movie.TagsArray.push(tag);
+          setTagsFromTagsArray(movie);
+        }
       }
 
       function removeTag(movie, tag) {
@@ -258,7 +406,7 @@
         return !failed;
       }
 
-      function moveTagToSubcategory(data, tag, subcatInput, categoryInput, preserveTag, existingTagOptional) {
+      function moveTagToSubcategory(data, tag, subcatInput, categoryInput, preserveTag) {
         var tagIsOptional = (data.length !== window.data.length);
         var categoryInputs = [];
 
@@ -305,12 +453,34 @@
         });
       };
 
+
+      function renameSubcategory(data, subCategoryInput, newSubategoryInput) {
+        _.each(data, function (movie) {
+          for (var i = 0, len = movie.SubcategoriesArray.length; i < len; i++) {
+            if (movie.SubcategoriesArray[i] === subCategoryInput) {
+              if (!!newSubategoryInput) {
+                if (!_.contains(movie.SubcategoriesArray, newSubategoryInput))
+                  movie.SubcategoriesArray[i] = newSubategoryInput;
+                else
+                  movie.SubcategoriesArray.splice(i, 1);
+              } else {
+                movie.SubcategoriesArray.splice(i, 1);
+              }
+
+              break;
+            }
+          }
+
+          setTagsFromTagsArray(movie);
+        });
+      }
+
       window.categories = {};
-      categories["gore & disturbing"] = ["torture", "splatter", "cannibal", "extreme"];
-      categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic"];
-      categories["killer"] = ["slasher", "crime & giallo", "bumpkin & redneck", "home invasion & survival", "evil child"];
-      categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "giant monsters", "sci-fi & aliens", "neo-monsters", "animals & nature", "small creatures"];
-      categories["paranormal"] = ["ghost & spirits", "haunted house", "possession", "devil & demon & hell", "witches & occult & religion", "supernatural power"];
+      categories["gore & disturbing"] = ["splatter", "torture", "extreme"];
+      categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "disaster & apocalypse"];
+      categories["killer"] = ["slasher", "crime & giallo", "redneck", "home invasion & survival", "evil child"];
+      categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature", "small creatures"];
+      categories["paranormal"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
 
       // DO EEET!!!
       load(function () {
@@ -406,6 +576,13 @@
         <button name="doReplace">OK</button>
       </div>
       <div class="control-group">
+        <label for="renameInput">Rename subc:</label>
+        <input type="text" name="renameInput" />
+        <label for="renameToInput">With:</label>
+        <input type="text" name="renameToInput" />
+        <button name="doRename">OK</button>
+      </div>
+      <div class="control-group">
         <label for="tagToSubcatTagInput">Move tag:</label>
         <input type="text" name="tagToSubcatTagInput" />
         <label for="tagToSubcatSubcatInput">To subcat.:</label>
@@ -423,11 +600,18 @@
         <input type="text" name="evalScriptInput" class="wider" />
         <button name="doEval">OK</button>
       </div>
+      <div class="control-group">
+        <button name="getImages">Get Poster Art</button>
+        <button name="export">Export</button>
+      </div>
     </div>
     <div class="migration section"></div>
     <div class="data section">
       <pre></pre>
     </div>
   </div>
+  <script type="text/javascript">
+   
+  </script>
 </body>
 </html>

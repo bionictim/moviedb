@@ -1,0 +1,19 @@
+﻿<h2>Horror Categories</h2>
+<%= App.Controller.Base.renderHtml("categories", categoriesViewModel) %>
+
+<h2>Major Genres</h2>
+<ul class="major-genres">
+  <% for (var genre in programsByMajorGenre) { %>
+    <li>
+      <span><%= genre %>:</span>
+      <span><%= programsByMajorGenre[genre].length %></span>
+    </li>
+  <% } %>
+</ul>
+
+<h2>All Movies</h2>
+<ol class="all-programs">
+  <% for (var i = 0, len = programs.length; i < len; i++) { %>
+    <li><%= programs[i].Title %> (<%= programs[i].ReleaseYear %>)</li>
+  <% } %>
+</ol>

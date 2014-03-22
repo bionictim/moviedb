@@ -1,0 +1,23 @@
+﻿<div class="program" data-flyout-visible="false"
+  <% if (!!this['TmdbPosterPath']) { %>
+    style="background-image: url(<%= "http://image.tmdb.org/t/p/w92" + this['TmdbPosterPath'] %>);"
+  <% } %>>
+  <% if (!this['TmdbPosterPath']) { %>
+    <div class="meta">
+      <span data-prop="Title"><%= Title %></span>
+      <span data-prop="ReleaseYear"><%= ReleaseYear %></span>
+    </div>
+  <% } %>
+  <div class="flyout">
+    <span data-prop="Title"><%= Title %></span>
+    <span data-prop="ReleaseYear">(<%= ReleaseYear %>)</span>
+    <br />
+    <span data-prop="Categories"><%= Categories %></span>
+    /
+    <span data-prop="Subcategories"><%= Subcategories %></span>
+    <% if (!!this['Tags']) { %>
+      <br />
+      <span data-prop="Tags">Tags: <%= Tags %></span>
+    <% } %>
+  </div>
+</div>

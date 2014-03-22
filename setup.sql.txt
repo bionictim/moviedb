@@ -11,5 +11,6 @@ CREATE TABLE Movies (
 	Rating 			INT,
 	Inaccessibility INT,
 	RepeatViewing 	BOOLEAN,
+    TmdbPosterPath  VARCHAR(100),
 	PRIMARY KEY (Id)
 );

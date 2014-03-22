@@ -1,0 +1,14 @@
+﻿<h2><%= title %></h2>
+<div class="program-list">
+  <div class="program-list-surface">
+    <% if (!!programs && programs.length > 0) { %>
+      <ul>
+        <% for (var i = 0, len = programs.length; i < len; i++) { %>
+          <li class="program-list-item">
+            <%= App.Controller.Base.renderHtml("program", programs[i]) %>
+          </li>
+        <% } %>
+      </ul>
+    <% } %>
+  </div>
+</div>
