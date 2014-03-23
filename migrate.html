@@ -43,6 +43,31 @@
           }
         });
 
+        $(".controls .visibility-toggler").on("change", function(e) {
+          var $this = $(this);
+          var selected;
+          var toggleKey;
+
+          if ($this.attr("type") === "checkbox") {
+            selected = $this.is(":checked");
+            toggleKey = $this[0].name;
+            $("[data-show-when='" + toggleKey + "']")[((selected) ? "add" : "remove") + "Class"]("visible");
+          } else {
+            selected = $this.val() !== "0";
+            toggleKey = $this.val();
+
+            $("[data-show-when='toggleMultiSelect'] [data-show-when]").each(function(o, i) {
+              var $item = $(this);
+              if ($item.data("showWhen").indexOf(toggleKey) > -1 && (selected)) {
+                $item.addClass("visible");
+              } else {
+                $item.removeClass("visible");
+              }
+            });
+          }
+        });
+
+
         $(".controls button[name='doEval']").on("click", function (e) {
           e.preventDefault();
           var selector = $(".controls input[name='evalSelectorInput']").val();
@@ -478,7 +503,7 @@
       window.categories = {};
       categories["gore & disturbing"] = ["splatter", "torture", "extreme"];
       categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "disaster & apocalypse"];
-      categories["killer"] = ["slasher", "crime & giallo", "redneck", "home invasion & survival", "evil child"];
+      categories["killer"] = ["slasher", "psychotic", "crime & giallo", "redneck", "home invasion & survival", "evil child"];
       categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature"];
       categories["paranormal"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
 
@@ -563,6 +588,14 @@
       input[type='text'].wider {
         width: 300px;
       }
+
+      [data-show-when] {
+        display: none !important;
+      }
+
+      [data-show-when].visible {
+        display: inline !important;
+      }
   </style>
 </head>
 <body>
@@ -599,6 +632,24 @@
         <label for="evalScriptInput">Run Script:</label>
         <input type="text" name="evalScriptInput" class="wider" />
         <button name="doEval">OK</button>
+      </div>
+      <div class="control-group">
+        <input type="checkbox" name="toggleMultiSelect" class="visibility-toggler" />
+        <label for="toggleMultiSelect">Build query</label>
+        <span data-show-when="toggleMultiSelect">
+          <label for="inputSelectQuery">Select:</label>
+          <input type="text" name="inputSelectQuery" />
+          <select name="selectAction" class="visibility-toggler">
+            <option name="selectActionDefault" value="0">-- SELECT ACTION --</option>
+            <option name="addTag" value="addTag">Add Tag</option>
+            <option name="moveTagToSubcategory" value="moveTagToSubcategory">Move tag to subcat</option>
+            <option name="renameSubcategory" value="renameSubcategory">Rename subcat</option>
+          </select>
+          <label for="fromValue" data-show-when="moveTagToSubcategory renameSubcategory">From:</label>
+          <input type="text" name="fromValue" data-show-when="moveTagToSubcategory renameSubcategory" />
+          <label for="toValue" data-show-when="addTag moveTagToSubcategory renameSubcategory">To:</label>
+          <input type="text" name="toValue" data-show-when="addTag moveTagToSubcategory renameSubcategory" />
+        </span>
       </div>
       <div class="control-group">
         <button name="getImages">Get Poster Art</button>
