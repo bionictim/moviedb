@@ -601,6 +601,24 @@
         <button name="doEval">OK</button>
       </div>
       <div class="control-group">
+        <input type="checkbox" name="toggleMultiSelect" class="visibility-toggler" />
+        <label for="toggleMultiSelect">Build query</label>
+        <span data-show-when="toggleMultiSelect">
+          <label for="inputSelectQuery">Select:</label>
+          <input type="text" name="inputSelectQuery" />
+          <select name="selectAction" class="visibility-toggler">
+            <option name="selectActionDefault">-- SELECT ACTION --</option>
+            <option name="addTag">Add Tag</option>
+            <option name="moveTagToSubcategory">Move tag to subcat</option>
+            <option name="renameSubcategory">Rename subcat</option>
+          </select>
+          <label for="fromValue" data-show-when="moveTagToSubcategory renameSubcategory">From:</label>
+          <input type="text" name="fromValue" data-show-when="moveTagToSubcategory renameSubcategory" />
+          <label for="toValue" data-show-when="addTag moveTagToSubcategory renameSubcategory">To:</label>
+          <input type="text" name="toValue" data-show-when="addTag moveTagToSubcategory renameSubcategory" />
+        </span>
+      </div>
+      <div class="control-group">
         <button name="getImages">Get Poster Art</button>
         <button name="export">Export</button>
       </div>
