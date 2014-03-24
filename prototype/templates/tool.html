@@ -2,6 +2,7 @@
   <h2>Grouping:</h2>
   <label for="GroupBy">Group by:</label>
   <select name="GroupBy">
+    <option value="Genre" selected="selected">Genre</option>
     <option value="Categories" selected="selected">Categories</option>
     <option value="Subcategories">Subcategories</option>
     <option value="Tags">Tags</option>
@@ -9,6 +10,9 @@
   <br />
   <input type="checkbox" name="ShowOnlySelected" checked="checked" />
   <label for="ShowOnlySelected">Show only selected</label>
+
+  <h2>Genres:</h2>
+  <%= App.Controller.Base.renderHtml("genres", programsByMajorGenre) %>
 
   <h2>Categories:</h2>
   <%= App.Controller.Base.renderHtml("categories", categoriesViewModel) %>

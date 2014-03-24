@@ -108,13 +108,15 @@
           e.preventDefault();
           var find = $(".controls input[name='renameInput']").val();
           var replace = $(".controls input[name='renameToInput']").val();
+          var isCategory = $(".controls input[name='renameCategory']").is(":checked");
 
-          renameSubcategory(data, find, replace);
+          renameSubcategory(data, find, replace, isCategory);
 
           addMigrationItem(migration, {
             operation: "rename",
             find: find,
-            replace: replace
+            replace: replace,
+            isCategory: isCategory
           });
 
           updateMigration(migration);
@@ -286,7 +288,7 @@
           if (item.operation === "replace")
             replaceStringInAllTags(data, item.find, item.replace);
           if (item.operation === "rename")
-            renameSubcategory(data, item.find, item.replace);
+            renameSubcategory(data, item.find, item.replace, item.isCategory);
           else if (item.operation === "eval")
             runEvalMigrationItem(data, item.script);
           else if (item.operation === "tagToSubcategory")
@@ -479,17 +481,19 @@
       };
 
 
-      function renameSubcategory(data, subCategoryInput, newSubategoryInput) {
+      function renameSubcategory(data, subCategoryInput, newSubategoryInput, isCategory) {
+        var arrayName = !!isCategory ? "CategoriesArray" : "SubcategoriesArray";
+
         _.each(data, function (movie) {
-          for (var i = 0, len = movie.SubcategoriesArray.length; i < len; i++) {
-            if (movie.SubcategoriesArray[i] === subCategoryInput) {
+          for (var i = 0, len = movie[arrayName].length; i < len; i++) {
+            if (movie[arrayName][i] === subCategoryInput) {
               if (!!newSubategoryInput) {
-                if (!_.contains(movie.SubcategoriesArray, newSubategoryInput))
-                  movie.SubcategoriesArray[i] = newSubategoryInput;
+                if (!_.contains(movie[arrayName], newSubategoryInput))
+                  movie[arrayName][i] = newSubategoryInput;
                 else
-                  movie.SubcategoriesArray.splice(i, 1);
+                  movie[arrayName].splice(i, 1);
               } else {
-                movie.SubcategoriesArray.splice(i, 1);
+                movie[arrayName].splice(i, 1);
               }
 
               break;
@@ -502,10 +506,10 @@
 
       window.categories = {};
       categories["gore & disturbing"] = ["splatter", "torture", "extreme"];
-      categories["psychological"] = [madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "disaster & apocalypse"];
+      categories["psychological"] = ["madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "disaster & apocalypse"];
       categories["killer"] = ["slasher", "psychotic", "crime & giallo", "redneck", "home invasion & survival", "evil child"];
       categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature"];
-      categories["paranormal"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
+      categories["supernatural"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
 
       // DO EEET!!!
       load(function () {
@@ -613,6 +617,8 @@
         <input type="text" name="renameInput" />
         <label for="renameToInput">With:</label>
         <input type="text" name="renameToInput" />
+        <input type="checkbox" name="renameCategory" />
+        <label for="renameCategory">Is Category</label>
         <button name="doRename">OK</button>
       </div>
       <div class="control-group">

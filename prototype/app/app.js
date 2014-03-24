@@ -15,7 +15,7 @@ App.Main = (function () {
 
     var config = {
         templateBaseUri: "templates/",
-        version: "1.00.00047",
+        version: "1.00.00049",
         programDataUrl: "../data/data.json.txt?__v=" + (new Date()).getMilliseconds()
     };
 

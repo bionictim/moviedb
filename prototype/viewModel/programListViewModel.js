@@ -8,7 +8,9 @@ App.ViewModel.ProgramList = App.Class.define(function (options) {
         var result = [];
         var filtered = _.filter(programs, function (program) {
             for (var i = 0, len = criteria.length; i < len; i++) {
-                var array = program[criteria[i].type + "Array"];
+                var array = (criteria[i].type === "Genre") ?
+                    [ program.Genre ] :
+                    program[criteria[i].type + "Array"];
 
                 if (!!array && _.contains(array, criteria[i].value)) {
                     return true;
@@ -19,7 +21,7 @@ App.ViewModel.ProgramList = App.Class.define(function (options) {
         });
 
         if (!!groupBy) {
-            var groupProperty = groupBy + "Array";
+            var groupProperty = (groupBy === "Genre") ? "Genre" : groupBy + "Array";        
             var groups;
 
             if (!!limitGroupsToCriteria) {
@@ -29,6 +31,8 @@ App.ViewModel.ProgramList = App.Class.define(function (options) {
             } else {
                 if (groupBy === "Categories") {
                     groups = _.keys(App.Main.cache.categories);
+                } else if (groupBy === "Genre") {
+                    groups = _.keys(App.Main.cache.programsByMajorGenre);
                 } else {
                     groups = [];
                     _.each(App.Main.cache.categories, function (cat) {
@@ -39,6 +43,9 @@ App.ViewModel.ProgramList = App.Class.define(function (options) {
 
             _.each(groups, function (group) {
                 var grouped = _.filter(filtered, function (program) {
+                    if (groupProperty === "Genre")
+                        return program[groupProperty] === group;
+
                     return _.contains(program[groupProperty], group);
                 });
 
