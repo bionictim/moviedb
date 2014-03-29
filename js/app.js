@@ -173,6 +173,63 @@ window.app.utils = {
 			
 			}
 		);
+	},
+
+	importData: function(onSuccess, onError) {
+		//if (confirm("Are you sure you want to overwrite your data and import?")) {				
+			html5sql.process(
+				"DROP TABLE Movies",
+				function(){
+					app.utils.runDbSetup(function () {
+						//app.utils.runSqlFromFile('import.sql.txt', true);
+						
+						$.get("data/data.json.txt?__v=" + (new Date()).getMilliseconds(), function(json) {
+							var data = JSON.parse(json);
+							var statements = [];
+							
+							$.each(data, function (i, row) {
+								statements.push(app.utils.getSqlUpdateFromRow("Movies", row));										
+							});
+							
+							html5sql.process(
+								statements,
+								function() {
+									app.views.renderSavedMovies();
+									//alert("Imported data.");
+									app.utils.toast("Imported data.");
+									console.log("Successfully imported data");
+									if (onSuccess) onSuccess();									
+								},
+								function(error, statement){
+									console.error("Error: " + error.message + " when processing " + statement);
+									if (onError) onError(error, statement);
+								}
+							);
+						});
+						
+					});
+				},
+				function(error, statement){
+					console.error("Error: " + error.message + " when processing " + statement);
+				}
+			);
+		//}
+	},
+
+ 	toast: function(msg) {
+		$("<div class='ui-loader ui-overlay-shadow ui-body-e ui-corner-all'><h3>"+msg+"</h3></div>")
+		.css({ display: "block", 
+			opacity: 0.90, 
+			position: "fixed",
+			padding: "7px",
+			"text-align": "center",
+			width: "270px",
+			left: ($(window).width() - 284)/2,
+			top: $(window).height()/2 })
+		.appendTo( $.mobile.pageContainer ).delay( 1500 )
+		.fadeOut( 400, function(){
+			$(this).remove();
+		});
 	}
 };
 
@@ -230,9 +287,22 @@ window.app.views = {
 	
 		$("#main_screen").on('pageinit', function() {
 			if (!html5sql.database) {
+
+				var importData = function() {
+					app.utils.importData(
+						function() {},
+						function(err, statement) {}
+					);
+				};
+
 				// TODO: Check if database table exists???
 				//
-				app.utils.runDbSetup();
+				app.utils.runDbSetup(function(arg1, arg2) { // not sure of signature
+					importData();
+				}, function(arg1, arg2) {
+					importData();
+				});
+
 			}
 			
 			$("#addMovie").on("click", function(e){
@@ -424,43 +494,8 @@ window.app.views = {
 			bind(app.views.settingsInputs);
 		
 			$("#importData").on("click", function(e) {
-				e.preventDefault();
-				
-				if (confirm("Are you sure you want to overwrite your data and import?")) {				
-					html5sql.process(
-						"DROP TABLE Movies",
-						function(){
-							app.utils.runDbSetup(function () {
-								//app.utils.runSqlFromFile('import.sql.txt', true);
-								
-								$.get("data/data.json.txt?__v=" + (new Date()).getMilliseconds(), function(json) {
-									var data = JSON.parse(json);
-									var statements = [];
-									
-									$.each(data, function (i, row) {
-										statements.push(app.utils.getSqlUpdateFromRow("Movies", row));										
-									});
-									
-									html5sql.process(
-										statements,
-										function() {
-											app.views.renderSavedMovies();
-											alert("Imported data.");
-											console.log("Successfully imported data");											
-										},
-										function(error, statement){
-											console.error("Error: " + error.message + " when processing " + statement);
-										}
-									);
-								});
-								
-							});
-						},
-						function(error, statement){
-							console.error("Error: " + error.message + " when processing " + statement);
-						}
-					);
-				}
+				e.preventDefault();				
+				app.utils.importData(function() {}, function(err, statement) {});
 			});
 
 			$("#exportData").on("click", function(e) {
@@ -497,6 +532,8 @@ window.app.views = {
 		$("#tools").on('pagebeforeshow', function() {
 			$("#exportOnEachSave").slider("refresh");
 		});
-	}
+	},
+
+
 	
 }

@@ -1,0 +1,15 @@
+<ul class="genres">
+  <% for (var genre in this) { %>
+    <li>
+      <input type="checkbox" 
+        data-navtype="Genre"
+        data-navvalue="<%= genre %>" />
+      <a href=""
+        data-navtype="Genre"
+        data-navvalue="<%= genre %>"
+        data-singlevalue="true">
+        <%= genre %>
+      </a>
+    </li>
+  <% } %>
+</ul>

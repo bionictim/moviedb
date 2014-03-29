@@ -475,12 +475,14 @@
         });
       }
 
-      window.categories = {};
-      categories["gore & disturbing"] = ["splatter", "torture", "extreme"];
-      categories["psychological"] = ["phobia", "madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "disaster & apocalypse"];
-      categories["killer"] = ["slasher", "crime & giallo", "redneck", "home invasion & survival", "evil child"];
-      categories["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature"];
-      categories["paranormal"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
+      function Categories() {
+        this["supernatural"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
+        this["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature"];
+        this["killer"] = ["slasher", "psychotic", "crime & giallo", "redneck", "home invasion", "evil child"];
+        this["psychological"] = ["madness & paranoia", "home invasion & survival", "surreal & psychedelic & weird", "body horror", "disaster & apocalypse & survival"];
+        this["gore & disturbing"] = ["splatter", "torture", "extreme"];        
+      }
+      window.categories = new Categories();
 
       // DO EEET!!!
       load(function () {

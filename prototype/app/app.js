@@ -15,7 +15,7 @@ App.Main = (function () {
 
     var config = {
         templateBaseUri: "templates/",
-        version: "1.00.00047",
+        version: "1.00.00049",
         programDataUrl: "../data/data.json.txt?__v=" + (new Date()).getMilliseconds()
     };
 
@@ -45,6 +45,7 @@ App.Main = (function () {
             _m.cache.categories = resultsArr[0];
             _m.cache.programs = resultsArr[1];
             _m.cache.tags = _m.services.data.getTags(_m.cache.programs);
+            _m.cache.programsByMajorGenre = _m.services.data.getProgramsByMajorGenre(_m.cache.programs);
             deferred.resolve();
         });
 
@@ -66,7 +67,8 @@ App.Main = (function () {
                 model: new App.ViewModel.Info({
                     categories: _m.cache.categories,
                     programs: _m.cache.programs,
-                    tags: _m.cache.tags
+                    tags: _m.cache.tags,
+                    programsByMajorGenre: _m.cache.programsByMajorGenre
                 })
             });
 
@@ -75,7 +77,8 @@ App.Main = (function () {
                 model: new App.ViewModel.Tool({
                     categories: _m.cache.categories,
                     programs: _m.cache.programs,
-                    tags: _m.cache.tags
+                    tags: _m.cache.tags,
+                    programsByMajorGenre: _m.cache.programsByMajorGenre
                 })
             });
         });

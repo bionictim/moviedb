@@ -54,5 +54,14 @@ App.Service.Data = App.Class.define(function (options) {
         });
 
         return result;
+    },
+
+        // Since we don't have a repository to lazy-load programs, let's take programs as a parameter & make this synchronous for now.
+    getProgramsByMajorGenre: function (programs) {
+        var result = _.groupBy(programs, function (program) {
+            return program.Genre;
+        });
+
+        return result;
     }
 });
