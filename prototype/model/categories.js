@@ -1,4 +1,4 @@
-﻿
+
 App.Model.Categories = App.Class.define(function () {
         this["supernatural"] = ["ghost & spirits", "haunted house", "possession & demons", "witches & occult & religion", "supernatural power"];
         this["monster"] = ["zombies", "vampire", "werewolf", "classic & mythological", "sci-fi & aliens", "other creatures", "animals & nature"];

@@ -43,6 +43,31 @@
           }
         });
 
+        $(".controls .visibility-toggler").on("change", function(e) {
+          var $this = $(this);
+          var selected;
+          var toggleKey;
+
+          if ($this.attr("type") === "checkbox") {
+            selected = $this.is(":checked");
+            toggleKey = $this[0].name;
+            $("[data-show-when='" + toggleKey + "']")[((selected) ? "add" : "remove") + "Class"]("visible");
+          } else {
+            selected = $this.val() !== "0";
+            toggleKey = $this.val();
+
+            $("[data-show-when='toggleMultiSelect'] [data-show-when]").each(function(o, i) {
+              var $item = $(this);
+              if ($item.data("showWhen").indexOf(toggleKey) > -1 && (selected)) {
+                $item.addClass("visible");
+              } else {
+                $item.removeClass("visible");
+              }
+            });
+          }
+        });
+
+
         $(".controls button[name='doEval']").on("click", function (e) {
           e.preventDefault();
           var selector = $(".controls input[name='evalSelectorInput']").val();
@@ -83,13 +108,15 @@
           e.preventDefault();
           var find = $(".controls input[name='renameInput']").val();
           var replace = $(".controls input[name='renameToInput']").val();
+          var isCategory = $(".controls input[name='renameCategory']").is(":checked");
 
-          renameSubcategory(data, find, replace);
+          renameSubcategory(data, find, replace, isCategory);
 
           addMigrationItem(migration, {
             operation: "rename",
             find: find,
-            replace: replace
+            replace: replace,
+            isCategory: isCategory
           });
 
           updateMigration(migration);
@@ -261,7 +288,7 @@
           if (item.operation === "replace")
             replaceStringInAllTags(data, item.find, item.replace);
           if (item.operation === "rename")
-            renameSubcategory(data, item.find, item.replace);
+            renameSubcategory(data, item.find, item.replace, item.isCategory);
           else if (item.operation === "eval")
             runEvalMigrationItem(data, item.script);
           else if (item.operation === "tagToSubcategory")
@@ -454,17 +481,19 @@
       };
 
 
-      function renameSubcategory(data, subCategoryInput, newSubategoryInput) {
+      function renameSubcategory(data, subCategoryInput, newSubategoryInput, isCategory) {
+        var arrayName = !!isCategory ? "CategoriesArray" : "SubcategoriesArray";
+
         _.each(data, function (movie) {
-          for (var i = 0, len = movie.SubcategoriesArray.length; i < len; i++) {
-            if (movie.SubcategoriesArray[i] === subCategoryInput) {
+          for (var i = 0, len = movie[arrayName].length; i < len; i++) {
+            if (movie[arrayName][i] === subCategoryInput) {
               if (!!newSubategoryInput) {
-                if (!_.contains(movie.SubcategoriesArray, newSubategoryInput))
-                  movie.SubcategoriesArray[i] = newSubategoryInput;
+                if (!_.contains(movie[arrayName], newSubategoryInput))
+                  movie[arrayName][i] = newSubategoryInput;
                 else
-                  movie.SubcategoriesArray.splice(i, 1);
+                  movie[arrayName].splice(i, 1);
               } else {
-                movie.SubcategoriesArray.splice(i, 1);
+                movie[arrayName].splice(i, 1);
               }
 
               break;
@@ -565,6 +594,14 @@
       input[type='text'].wider {
         width: 300px;
       }
+
+      [data-show-when] {
+        display: none !important;
+      }
+
+      [data-show-when].visible {
+        display: inline !important;
+      }
   </style>
 </head>
 <body>
@@ -582,6 +619,8 @@
         <input type="text" name="renameInput" />
         <label for="renameToInput">With:</label>
         <input type="text" name="renameToInput" />
+        <input type="checkbox" name="renameCategory" />
+        <label for="renameCategory">Is Category</label>
         <button name="doRename">OK</button>
       </div>
       <div class="control-group">
@@ -609,6 +648,10 @@
           <label for="inputSelectQuery">Select:</label>
           <input type="text" name="inputSelectQuery" />
           <select name="selectAction" class="visibility-toggler">
+            <option name="selectActionDefault" value="0">-- SELECT ACTION --</option>
+            <option name="addTag" value="addTag">Add Tag</option>
+            <option name="moveTagToSubcategory" value="moveTagToSubcategory">Move tag to subcat</option>
+            <option name="renameSubcategory" value="renameSubcategory">Rename subcat</option>
             <option name="selectActionDefault">-- SELECT ACTION --</option>
             <option name="addTag">Add Tag</option>
             <option name="moveTagToSubcategory">Move tag to subcat</option>
