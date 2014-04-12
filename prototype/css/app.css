@@ -59,6 +59,8 @@ table {
 body {
     padding: 0;
     margin: 0;
+    font-family: "Trebuchet MS", Helvetica, sans-serif;
+    text-transform: capitalize;
 }
 
 ul {
@@ -73,6 +75,16 @@ h2 {
     font-weight: bold;
     font-size: 22px;
     text-transform: capitalize;
+}
+
+div.br {
+    clear: both;
+    height: 1px;
+    float: left;
+    display: block;
+    width: 100%;
+    border-top: 1px solid white;
+    margin: 4px;
 }
 
 .nav-view {
@@ -106,12 +118,18 @@ h2 {
 }
 
 [data-section='tool'] .tool-nav {
-    position: absolute;
+    position: fixed;
+    height: 100%;
     overflow-y: scroll;
     /*width: 270px;*/
     width: 20%;
     top: 40px;
     left: 0;
+    background: #ccc;
+    padding: 20px;
+}
+
+[data-section='tool'] .tool-nav .tool-nav-content {
     background: #ccc;
     padding: 20px;
 }
@@ -124,6 +142,14 @@ h2 {
 .program-list {
     float: left;
     clear: both;
+}
+
+.tool-nav ul {
+    margin-bottom: 20px;
+}
+
+.tool-nav ul li {
+    margin-top: 6px;
 }
 
     .program-list ul {
@@ -159,14 +185,26 @@ h2 {
 
     .program .flyout {
         display: none;
-        width: 115px;
+        width: 155px;
         position: absolute;
-        left: -125px;
-        padding: 4px;
+        left: -155px;
+        padding: 8px;
         background-color: darkred;
         color: white;
+        font-size: 14px;
+        z-index: 100;
     }
 
     .program[data-flyout-visible='true'] .flyout {
         display: block;
+    }
+
+    .program .flyout div {
+        margin-top: 3px;
+        padding-top: 3px;
+        border-top: 1px solid white;
+    }
+
+    .program .flyout span[data-prop='Title'] {
+        font-weight: bold;
     }

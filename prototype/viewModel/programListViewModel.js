@@ -49,6 +49,10 @@ App.ViewModel.ProgramList = App.Class.define(function (options) {
                     return _.contains(program[groupProperty], group);
                 });
 
+                grouped = _.sortBy(grouped, function(movie) {
+                    return movie.Title;
+                });
+
                 if (grouped.length > 0) {
                     result.push(new App.ViewModel.ProgramList({
                         title: group,

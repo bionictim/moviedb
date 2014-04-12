@@ -1,23 +1,25 @@
 ﻿<div class="tool-nav">
-  <h2>Grouping:</h2>
-  <label for="GroupBy">Group by:</label>
-  <select name="GroupBy">
-    <option value="Genre" selected="selected">Genre</option>
-    <option value="Categories" selected="selected">Categories</option>
-    <option value="Subcategories">Subcategories</option>
-    <option value="Tags">Tags</option>
-  </select>
-  <br />
-  <input type="checkbox" name="ShowOnlySelected" checked="checked" />
-  <label for="ShowOnlySelected">Show only selected</label>
+  <div class="tool-nav-content">
+    <h2>Grouping:</h2>
+    <label for="GroupBy">Group by:</label>
+    <select name="GroupBy">
+      <option value="Genre">Genre</option>
+      <option value="Categories">Categories</option>
+      <option value="Subcategories" selected="selected">Subcategories</option>
+      <option value="Tags">Tags</option>
+    </select>
+    <br />
+    <input type="checkbox" name="ShowOnlySelected" checked="checked" />
+    <label for="ShowOnlySelected">Show only selected</label>
 
-  <h2>Genres:</h2>
-  <%= App.Controller.Base.renderHtml("genres", programsByMajorGenre) %>
+    <h2>Genres:</h2>
+    <%= App.Controller.Base.renderHtml("genres", programsByMajorGenre) %>
 
-  <h2>Categories:</h2>
-  <%= App.Controller.Base.renderHtml("categories", categoriesViewModel) %>
+    <h2>Categories:</h2>
+    <%= App.Controller.Base.renderHtml("categories", categoriesViewModel) %>
 
-  <h2>Tags:</h2>
-  <%= App.Controller.Base.renderHtml("tags", tags) %>
+    <h2>Tags:</h2>
+    <%= App.Controller.Base.renderHtml("tags", tags) %>
+  </div>
 </div>
 <div class="tool-content"></div>
