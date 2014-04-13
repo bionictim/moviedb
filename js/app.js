@@ -26,10 +26,12 @@ window.app.utils = {
 		var $form = $form || $("form").eq(0);
 		var $inputs = $form.find(app.utils.Consts.formInputSelector);		
 		var row = {};
+		var blacklist = [""];
 		
 		$inputs.each(function(i, obj){
 			var $input = $(obj);
-			row[$input[0].name] = $input.val();
+			if ($input[0].type !== "submit")
+				row[$input[0].name] = $input.val();
 		});
 		
 		return app.utils.getSqlUpdateFromRow (tableName, row, id);
