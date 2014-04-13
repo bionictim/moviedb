@@ -39,16 +39,18 @@
 			<label for="dateWatched">Date Watched</label>
 			<input type="date" name="DateWatched" placeholder="Date Watched" id="dateWatched" required />
 	        <input type="text" name="Title" placeholder="Title" required />
+	        <button name="loadFromService">Populate from Service</button>
 			<input type="number" step="1" name="ReleaseYear" placeholder="Release Year" />
 			<input type="text" name="Genre" placeholder="Genre" />
-      <input type="text" name="Categories" placeholder="Categories" />
-      <input type="text" name="Subcategories" placeholder="Subcategories" />
+			<input type="text" name="Categories" placeholder="Categories" />
+			<input type="text" name="Subcategories" placeholder="Subcategories" />
 			<textarea name="Tags" placeholder="Tags" autocorrect="off" autocapitalize="off"></textarea>
 			<input type="number" step="1" name="Rating" placeholder="Rating" />
 			<input type="number" step="1" name="Inaccessibility" placeholder="Inaccessibility" />
 			<input type="text" name="Director" placeholder="Director" />
 			<input type="text" name="RepeatViewing" placeholder="Repeat Viewing" />
-      <input type="text" name="TmdbPosterPath" placeholder="Tmdb Poster Path" />
+      		<input type="text" name="TmdbPosterPath" placeholder="Tmdb Poster Path" />
+      		
 
 			<br />
 			
@@ -60,6 +62,18 @@
 
 		
 		</form>
+
+		<div id="selectMovie" data-role="popup">
+			<ul data-role="listview">
+				<li class="template">
+					<a href="" data-movie="">
+						<img src="http://img2.timeinc.net/ew/i/2014/03/19/game-of-thrones-dragon.jpg" />
+						<h2>Heading</h2>
+						<p>subheading</p>
+					</a>
+				</li>
+			</ul>
+		</div>
 	
 	</div>
 

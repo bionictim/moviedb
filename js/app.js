@@ -5,7 +5,7 @@ window.app = {};
 //
 window.app.utils = {
 	Consts: {
-		formInputSelector: "input[type='text'], textarea, input[type='date'], input[type='number']"
+		formInputSelector: "input[type='text'], textarea, input[type='date'], input[type='number'], button"
 	},
 
 	toggleEditMode: function (editable, $form) {
@@ -230,6 +230,66 @@ window.app.utils = {
 		.fadeOut( 400, function(){
 			$(this).remove();
 		});
+	},
+
+	fetchMovieSearchData: function (movieTitle) {
+		var deferred = $.Deferred();
+
+		var url = "http://api.themoviedb.org/3/search/movie?api_key=04648b4bb8120607e0a82c88196d0d0c&query={0}";
+
+		$.ajax({
+			url: url.replace("{0}", encodeURIComponent(movieTitle)),
+			type: "GET",
+			success: function (data, textStatus, jqXHR) {
+				deferred.resolve(data);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log("Error: " + textStatus + ", " + errorThrown);
+				deferred.reject(jqXHR, textStatus, errorThrown);
+		  	}
+		});
+
+		return deferred.promise();
+	},
+
+	fetchMovieDetailsData: function (tmdbMovieId) {
+		var deferred = $.Deferred();
+
+		var url = "http://api.themoviedb.org/3/movie/{0}?api_key=04648b4bb8120607e0a82c88196d0d0c";
+
+		$.ajax({
+			url: url.replace("{0}", encodeURIComponent(tmdbMovieId)),
+			type: "GET",
+			success: function (data, textStatus, jqXHR) {
+				deferred.resolve(data);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log("Error: " + textStatus + ", " + errorThrown);
+				deferred.reject(jqXHR, textStatus, errorThrown);
+		  	}
+		});
+
+		return deferred.promise();
+	},
+
+	fetchMovieCreditsData: function (tmdbMovieId) {
+		var deferred = $.Deferred();
+
+		var url = "http://api.themoviedb.org/3/movie/{0}/credits?api_key=04648b4bb8120607e0a82c88196d0d0c";
+
+		$.ajax({
+			url: url.replace("{0}", encodeURIComponent(tmdbMovieId)),
+			type: "GET",
+			success: function (data, textStatus, jqXHR) {
+				deferred.resolve(data);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log("Error: " + textStatus + ", " + errorThrown);
+				deferred.reject(jqXHR, textStatus, errorThrown);
+		  	}
+		});
+
+		return deferred.promise();
 	}
 };
 
@@ -327,6 +387,11 @@ window.app.views = {
 
 			var $page = $(this);
 			var $form = $("form");
+			var $popup = $("#selectMovie");
+			var $template = $popup.find(".template");
+			var $list = $popup.find("ul");
+
+			$template.removeClass("template");
 			
 			$page.attr("data-mode", "editing");
 			
@@ -334,6 +399,86 @@ window.app.views = {
 				e.preventDefault();
 				app.utils.clearForm();
 				$.mobile.changePage("index.html");
+			});
+
+			$form.find("[name='loadFromService']").on("click", function(e) {
+				e.preventDefault();
+				var title = $("[name='Title']").val();
+
+				if (!!title) {
+					app.utils.fetchMovieSearchData(title).then(function (data) {
+						console.log(data);
+
+						if (!!data && !!data.results && data.results.length > 0) {
+							
+							$list.html("");
+							var basePosterPath = "http://image.tmdb.org/t/p/w185";
+
+							data.results.forEach(function (movie) {
+								var $item = $template.clone();
+								$item.find("img").attr("src", basePosterPath + movie.poster_path);
+								$item.find("h2").html(movie.title);
+								$item.find("p").html(movie.release_date);
+								$item.find("a").attr("data-movie", escape(JSON.stringify(movie)));
+								$list.append($item);
+							});
+
+							$popup.popup("open");
+						}
+
+					}).fail(function(jqXHR, textStatus, errorThrown) {
+
+					});
+				}
+			});
+
+			$popup.on("click", "a", function(e) {
+				e.preventDefault();
+				var movie = JSON.parse(unescape($(this).data("movie")));
+
+				$form.find("[name='Title']").val(movie.title);
+				$form.find("[name='ReleaseYear']").val(new Date(movie.release_date).getFullYear());
+				$form.find("[name='TmdbPosterPath']").val(movie.poster_path);
+
+				app.utils.fetchMovieDetailsData(movie.id).then(function (data) {
+					if (!!data && !!data.genres && data.genres.length > 0) {
+						var genres = $.map(data.genres, function (genre) {
+							return genre.name.toLowerCase();
+						});
+
+						if (genres.length) {
+							var $tagInput = $form.find("[name='Tags']");
+							var tagInputVal = $tagInput.val();
+
+							if (!!tagInputVal)
+								genres.push(tagInputVal);
+
+							var tags = genres.join(", ");
+
+							$tagInput.val(tags);
+						}
+					}
+				}).then(function() {
+					return app.utils.fetchMovieCreditsData(movie.id);
+				}).then(function (data) {
+					if (!!data && !!data.crew && data.crew.length > 0) {
+						var directors = $.grep(data.crew, function (credit) {
+							return credit.job === "Director";
+						});
+
+						var names = $.map(directors, function (member) {
+							return member.name;
+						});
+
+						var directorsVal = names.join(", ");
+
+						$form.find("[name='Director']").val(directorsVal);
+					}
+					console.log(data);
+				}).done(function () {
+					$popup.popup("close");
+				}).fail(function (jqXHR, textStatus, errorThrown) {
+				});
 			});
 
 			$form.submit(function(event) {
