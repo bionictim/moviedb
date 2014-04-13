@@ -418,7 +418,10 @@ window.app.views = {
 
 							data.results.forEach(function (movie) {
 								var $item = $template.clone();
-								$item.find("img").attr("src", basePosterPath + movie.poster_path);
+								
+								if (!!movie.poster_path)
+									$item.find("img").attr("src", basePosterPath + movie.poster_path);
+
 								$item.find("h2").html(movie.title);
 								$item.find("p").html(movie.release_date);
 								$item.find("a").attr("data-movie", escape(JSON.stringify(movie)));
