@@ -588,11 +588,27 @@ window.app.views = {
 			function(transaction, results, rowArray) {
 			
 				var html = '';
+				var basePosterPath = "http://image.tmdb.org/t/p/w185";
 
-				$.each(rowArray, function(index, value) { 				
-					html += "<li><a href='new_movie.html' class='ui-link-inherit movie-link' data-movieid='" + value.Id + "' data-rel='dialog' data-transition='pop'>" + 
-						//value.DateWatched + ": " + 
-						value.Title + " (" + value.ReleaseYear + ")</a></li>";
+				$.each(rowArray, function(index, value) {
+					var imgUrl = value.TmdbPosterPath;
+					if (imgUrl)
+						imgUrl = basePosterPath + imgUrl;
+
+					var newRow = "" +
+						"<li data-rating='" + value.Rating + "'>" + 
+							"<a href='new_movie.html' class='ui-link-inherit movie-link' " + 
+								"data-movieid='" + value.Id + "' " + 
+								"data-rel='dialog' data-transition='pop'>" + 
+									//value.DateWatched + ": " + 
+									"<img src='" + imgUrl + "' />" +
+									"<h2>" + value.Title + " (" + value.ReleaseYear + ")" + "</h2>" +
+									"<p>" + new Date(value.DateWatched).toLocaleDateString() + "</p>" +
+									"<p class='star-rating'></p>" +
+									//"<p>" + value.Rating + " / 10</p>" +
+							"</a>" +
+						"</li>";
+					html += newRow;
 				});
 				
 				$('#movie_list').html(html);
@@ -602,6 +618,25 @@ window.app.views = {
 					sessionStorage.setItem('selectedRow', $(this).data("movieid"))
 				});
 				
+				$('#movie_list li').each(function (i, o) {
+					var $item = $(o);
+					var rating = $item.data("rating");
+					var ratyArgs = {
+						score: rating,
+						number: 10,
+						readOnly: true,
+						path: "bower_components/raty/lib/images"
+					};
+					var $starRating = $(o).find(".star-rating");
+					var deferTime = (i <= 20) ? 0 :
+						(i <= 100) ? 3000 :
+						(i <= 500) ? 7000 :
+						10000;
+
+					setTimeout(function () {
+						$starRating.raty(ratyArgs);
+					}, deferTime);
+				});
 			},
 			function(error, statement){
 				console.error("Error: " + error.message + " when processing " + statement);
