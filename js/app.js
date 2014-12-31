@@ -578,7 +578,28 @@ window.app.views = {
 	renderSavedMovies: function (model) {
 		model = model || {
 			parentalFilter: (localStorage["parentalFilter"] || 10)
-		};		
+		};
+
+		var parseStoredDate = function (storedDateString) {
+			var parts = storedDateString.split("-");
+			if (parts.length === 3) {
+				return new Date("" + parts[1] + "/" + parts[2] + "/" + parts[0]);
+			} else {
+				return new Date(storedDateString);
+			}
+		};
+
+		var getStarsHtml = function (rating) {
+			var result = '<p class="star-rating ui-li-desc" title="gorgeous">';
+
+			for (var i = 1; i <= 10; i++) {
+				result += ('<i data-alt="' + i + '" class="star-' + (i <= rating ? "on" : "off") + '-png" title="gorgeous"></i>&nbsp;');
+			}
+
+			result += '</p>';
+
+			return result;
+		};
 	
 		html5sql.putSelectResultsInArray = true;
 		html5sql.process(
@@ -598,14 +619,13 @@ window.app.views = {
 					var newRow = "" +
 						"<li data-rating='" + value.Rating + "'>" + 
 							"<a href='new_movie.html' class='ui-link-inherit movie-link' " + 
-								"data-movieid='" + value.Id + "' " + 
-								"data-rel='dialog' data-transition='pop'>" + 
-									//value.DateWatched + ": " + 
+								"data-movieid='" + value.Id + "' " +
+								"data-rel='dialog' data-transition='pop'>" +
 									"<img src='" + imgUrl + "' />" +
 									"<h2>" + value.Title + " (" + value.ReleaseYear + ")" + "</h2>" +
-									"<p>" + new Date(value.DateWatched).toLocaleDateString() + "</p>" +
-									"<p class='star-rating'></p>" +
+									"<p>" + parseStoredDate(value.DateWatched).toLocaleDateString() + "</p>" +
 									//"<p>" + value.Rating + " / 10</p>" +
+									getStarsHtml(value.Rating) +
 							"</a>" +
 						"</li>";
 					html += newRow;
@@ -625,7 +645,8 @@ window.app.views = {
 						score: rating,
 						number: 10,
 						readOnly: true,
-						path: "bower_components/raty/lib/images"
+						path: "../bower_components/raty/lib/images",
+						starType: "i"
 					};
 					var $starRating = $(o).find(".star-rating");
 					var deferTime = (i <= 20) ? 0 :
@@ -633,9 +654,10 @@ window.app.views = {
 						(i <= 500) ? 7000 :
 						10000;
 
-					setTimeout(function () {
-						$starRating.raty(ratyArgs);
-					}, deferTime);
+					if (deferTime < 0)
+						setTimeout(function () {
+							$starRating.raty(ratyArgs);
+						}, deferTime);
 				});
 			},
 			function(error, statement){
