@@ -122,7 +122,7 @@ window.app.utils = {
 	
 	saveJSON: function (obj) {
 		var json = JSON.stringify(obj);
-		window.open( "data:text/json;charset=utf-8," + escape(json))
+		window.open( "data:text/json;charset=utf-8," + escape(json));
 	},
 	
 	exportData: function (onSuccess) {
@@ -216,6 +216,51 @@ window.app.utils = {
 				}
 			);
 		//}
+	},
+
+	getCsv: function (onSuccess) {
+		onSuccess = onSuccess || function() {};
+
+		html5sql.process(["SELECT * FROM Movies;"],
+			function(transaction, results, rowArray) {			
+				var csv = "";
+		
+				rowArray.forEach(function (row, i) {
+					var csvRow = "";
+					for (var col in row) {
+						var val = "" + (row[col] || "");
+						csvRow += ('"' + val.replace(/"/g, '""') + '",');
+					};
+					csvRow = csvRow.substring(0, csvRow.length - 1);
+					csv += csvRow;
+					csv += "\r\n";
+				});
+
+				onSuccess(csv);
+				//window.open("data:text/csv;charset=utf-8," + escape(csv));				
+			}, function() {
+			
+			}
+		);
+	},
+
+	downloadWithName: function (uri, name) {
+
+	    function eventFire(el, etype){
+	        if (el.fireEvent) {
+	            (el.fireEvent('on' + etype));
+	        } else {
+	            var evObj = document.createEvent('Events');
+	            evObj.initEvent(etype, true, false);
+	            el.dispatchEvent(evObj);
+	        }
+	    }
+
+	    var link = document.createElement("a");
+	    link.download = name;
+	    link.href = uri;
+	    eventFire(link, "click");
+
 	},
 
  	toast: function(msg) {
@@ -700,15 +745,27 @@ window.app.views = {
 			
 			bind(app.views.settingsInputs);
 		
-			$("#importData").on("click", function(e) {
+			$("#importData").on("click", function (e) {
 				e.preventDefault();				
 				app.utils.importData(function() {}, function(err, statement) {});
 			});
 
-			$("#exportData").on("click", function(e) {
+			$("#exportData").on("click", function (e) {
 				e.preventDefault();
 				app.utils.exportData(function () {
 					alert("Data exported.");
+				});
+			});
+
+			$("#downloadCsv").on("click", function (e) {
+				e.preventDefault();
+				var $link = $(this);
+				
+				app.utils.getCsv(function (csv) {
+					$link.attr("href", "data:application/csv;charset=utf-8," + encodeURIComponent(csv));
+					
+					app.utils.downloadWithName($link.attr("href"), "movies.csv");
+					//window.location.href = $link.attr("href");
 				});
 			});
 			
