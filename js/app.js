@@ -5,7 +5,8 @@ window.app = {};
 //
 window.app.utils = {
 	Consts: {
-		formInputSelector: "input[type='text'], textarea, input[type='date'], input[type='number'], button"
+		formInputSelector: "input[type='text'], textarea, input[type='date'], input[type='number'], button",
+		displayRatingsAsStars: false
 	},
 
 	toggleEditMode: function (editable, $form) {
@@ -669,8 +670,9 @@ window.app.views = {
 									"<img src='" + imgUrl + "' />" +
 									"<h2>" + value.Title + " (" + value.ReleaseYear + ")" + "</h2>" +
 									"<p>" + parseStoredDate(value.DateWatched).toLocaleDateString() + "</p>" +
-									//"<p>" + value.Rating + " / 10</p>" +
-									getStarsHtml(value.Rating) +
+									(app.utils.Consts.displayRatingsAsStars ?
+										getStarsHtml(value.Rating) : 
+										"<p>" + value.Rating + " / 10</p>")
 							"</a>" +
 						"</li>";
 					html += newRow;
@@ -683,27 +685,29 @@ window.app.views = {
 					sessionStorage.setItem('selectedRow', $(this).data("movieid"))
 				});
 				
-				$('#movie_list li').each(function (i, o) {
-					var $item = $(o);
-					var rating = $item.data("rating");
-					var ratyArgs = {
-						score: rating,
-						number: 10,
-						readOnly: true,
-						path: "../bower_components/raty/lib/images",
-						starType: "i"
-					};
-					var $starRating = $(o).find(".star-rating");
-					var deferTime = (i <= 20) ? 0 :
-						(i <= 100) ? 3000 :
-						(i <= 500) ? 7000 :
-						10000;
+				if (app.utils.Consts.displayRatingsAsStars) {
+					$('#movie_list li').each(function (i, o) {
+						var $item = $(o);
+						var rating = $item.data("rating");
+						var ratyArgs = {
+							score: rating,
+							number: 10,
+							readOnly: true,
+							path: "../bower_components/raty/lib/images",
+							starType: "i"
+						};
+						var $starRating = $(o).find(".star-rating");
+						var deferTime = (i <= 20) ? 0 :
+							(i <= 100) ? 3000 :
+							(i <= 500) ? 7000 :
+							10000;
 
-					if (deferTime < 0)
-						setTimeout(function () {
-							$starRating.raty(ratyArgs);
-						}, deferTime);
-				});
+						if (deferTime < 0)
+							setTimeout(function () {
+								$starRating.raty(ratyArgs);
+							}, deferTime);
+					});
+				}
 			},
 			function(error, statement){
 				console.error("Error: " + error.message + " when processing " + statement);
