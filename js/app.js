@@ -556,7 +556,8 @@ window.app.views = {
 						sessionStorage.setItem('success', 'yes');
 						sessionStorage.setItem('refreshSavedMovies', true);
 
-						if ("" + localStorage["exportOnEachSave"] == "true") {
+						//if ("" + localStorage["exportOnEachSave"] == "true") {
+						if (true) {
 							app.utils.exportData(function() {
 								$.mobile.changePage("index.html");
 							});
